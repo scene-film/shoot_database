@@ -4,8 +4,13 @@
 
 class BentoAPI {
     constructor() {
-        // ローカルストレージはデモ用のみ
         this.localStorageKey = 'bentoNaviShops';
+        // 複数のCORSプロキシを用意（フォールバック用）
+        this.corsProxies = [
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.io/?',
+            'https://api.codetabs.com/v1/proxy?quest='
+        ];
     }
 
     // GAS URLが設定されているか確認
@@ -194,34 +199,136 @@ class BentoAPI {
     }
 
     // ===========================
-    // OGP取得
+    // OGP取得（複数プロキシ対応）
     // ===========================
 
     async fetchOGP(url) {
-        const proxyUrl = config.get('ogpProxy') + encodeURIComponent(url);
+        let lastError = null;
         
-        const response = await fetch(proxyUrl);
-        if (!response.ok) {
-            throw new Error('情報の取得に失敗しました');
+        // 各プロキシを順番に試行
+        for (const proxy of this.corsProxies) {
+            try {
+                const result = await this.tryFetchWithProxy(proxy, url);
+                if (result && result.title) {
+                    return result;
+                }
+            } catch (error) {
+                lastError = error;
+                console.log(`Proxy failed: ${proxy}`, error.message);
+            }
         }
         
-        const data = await response.json();
-        const html = data.contents;
+        // 全プロキシ失敗時はURLからタイトルを推測
+        return this.extractFromUrl(url);
+    }
+
+    async tryFetchWithProxy(proxy, targetUrl) {
+        const proxyUrl = proxy + encodeURIComponent(targetUrl);
         
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        
+        try {
+            const response = await fetch(proxyUrl, {
+                signal: controller.signal,
+                headers: {
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+                }
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const html = await response.text();
+            
+            if (!html || html.length < 100) {
+                throw new Error('Empty response');
+            }
+            
+            return this.parseOGP(html, targetUrl);
+        } catch (error) {
+            clearTimeout(timeoutId);
+            throw error;
+        }
+    }
+
+    parseOGP(html, sourceUrl) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
         
-        const getMetaContent = (property) => {
-            const meta = doc.querySelector(`meta[property="${property}"]`) ||
-                         doc.querySelector(`meta[name="${property}"]`);
-            return meta ? meta.getAttribute('content') : null;
+        const getMetaContent = (...properties) => {
+            for (const prop of properties) {
+                let meta = doc.querySelector(`meta[property="${prop}"]`);
+                if (meta) return meta.getAttribute('content');
+                
+                meta = doc.querySelector(`meta[name="${prop}"]`);
+                if (meta) return meta.getAttribute('content');
+                
+                meta = doc.querySelector(`meta[itemprop="${prop}"]`);
+                if (meta) return meta.getAttribute('content');
+            }
+            return null;
         };
         
+        // タイトル取得
+        let title = getMetaContent('og:title', 'twitter:title', 'title');
+        if (!title) {
+            const titleTag = doc.querySelector('title');
+            title = titleTag ? titleTag.textContent.trim() : null;
+        }
+        if (!title) {
+            const h1 = doc.querySelector('h1');
+            title = h1 ? h1.textContent.trim() : null;
+        }
+        
+        // 説明取得
+        let description = getMetaContent('og:description', 'twitter:description', 'description');
+        
+        // 画像取得
+        let image = getMetaContent('og:image', 'twitter:image', 'twitter:image:src', 'image');
+        
+        // 相対URLを絶対URLに変換
+        if (image && !image.startsWith('http')) {
+            try {
+                const baseUrl = new URL(sourceUrl);
+                if (image.startsWith('//')) {
+                    image = baseUrl.protocol + image;
+                } else if (image.startsWith('/')) {
+                    image = baseUrl.origin + image;
+                } else {
+                    image = baseUrl.origin + '/' + image;
+                }
+            } catch (e) {}
+        }
+        
         return {
-            title: getMetaContent('og:title') || doc.querySelector('title')?.textContent || null,
-            description: getMetaContent('og:description') || getMetaContent('description') || null,
-            image: getMetaContent('og:image') || null
+            title: title || null,
+            description: description || null,
+            image: image || null
         };
+    }
+
+    // URLからタイトルを推測（フォールバック）
+    extractFromUrl(url) {
+        try {
+            const urlObj = new URL(url);
+            let title = urlObj.hostname.replace('www.', '');
+            const parts = title.split('.');
+            if (parts.length > 0) {
+                title = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+            }
+            
+            return {
+                title: title,
+                description: null,
+                image: null
+            };
+        } catch (e) {
+            return { title: null, description: null, image: null };
+        }
     }
 
     // ===========================
