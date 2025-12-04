@@ -11,15 +11,18 @@ let currentFilters = {
     search: ''
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     ui.init();
     
-    // カテゴリUIを初期化
+    // カテゴリUIを初期化（デフォルトで表示）
     ui.updateFilterCategoryChips();
     ui.updateFormCategoryCheckboxes();
     
     initEventListeners();
     checkSetupStatus();
+    
+    // カテゴリとショップを読み込み
+    await loadCategories();
     loadShops();
 });
 
@@ -372,7 +375,7 @@ function resetSettings() {
         ui.elements.gasUrl.value = '';
         ui.updateConnectionStatus('demo', '未設定（デモモード）');
         ui.showSetupNotice(true);
-        ui.renderCategoryList();
+        ui.renderCategoryList([]);
         ui.updateFilterCategoryChips();
         ui.updateFormCategoryCheckboxes();
         ui.showToast('設定をリセットしました');
@@ -380,8 +383,23 @@ function resetSettings() {
     }
 }
 
+// カテゴリを読み込み
+async function loadCategories() {
+    try {
+        const categories = await api.getCategories();
+        config.updateCategories(categories);
+        ui.updateFilterCategoryChips();
+        ui.updateFormCategoryCheckboxes();
+        return categories;
+    } catch (error) {
+        console.error('Failed to load categories:', error);
+        // エラー時はデフォルトカテゴリを使用
+        return [];
+    }
+}
+
 // カテゴリを追加
-function addCategory() {
+async function addCategory() {
     const name = ui.elements.newCategoryName.value.trim();
     
     if (!name) {
@@ -389,22 +407,27 @@ function addCategory() {
         return;
     }
     
-    // IDを生成（日本語対応のため、タイムスタンプベース）
-    const id = 'cat_' + Date.now();
+    if (!api.hasGasUrl()) {
+        ui.showToast('スプレッドシートを設定してください', 'error');
+        return;
+    }
     
-    config.addCategory(id, name);
-    ui.elements.newCategoryName.value = '';
-    
-    // 各UIを更新
-    ui.renderCategoryList();
-    ui.updateFilterCategoryChips();
-    ui.updateFormCategoryCheckboxes();
-    
-    ui.showToast(`カテゴリ「${name}」を追加しました`);
+    try {
+        await api.addCategory(name);
+        ui.elements.newCategoryName.value = '';
+        
+        // カテゴリを再読み込み
+        await loadCategories();
+        ui.renderCategoryList(await api.getCategories());
+        
+        ui.showToast(`カテゴリ「${name}」を追加しました`);
+    } catch (error) {
+        ui.showToast(error.message, 'error');
+    }
 }
 
 // カテゴリを削除
-function deleteCategory(id) {
+async function deleteCategory(id) {
     const categories = config.getAllCategoriesWithoutAll();
     const name = categories[id];
     
@@ -412,12 +435,15 @@ function deleteCategory(id) {
         return;
     }
     
-    if (config.removeCategory(id)) {
-        ui.renderCategoryList();
-        ui.updateFilterCategoryChips();
-        ui.updateFormCategoryCheckboxes();
+    try {
+        await api.deleteCategory(id);
+        
+        // カテゴリを再読み込み
+        await loadCategories();
+        ui.renderCategoryList(await api.getCategories());
+        
         ui.showToast(`カテゴリ「${name}」を削除しました`);
-    } else {
-        ui.showToast('デフォルトカテゴリは削除できません', 'error');
+    } catch (error) {
+        ui.showToast(error.message, 'error');
     }
 }
