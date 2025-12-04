@@ -206,19 +206,22 @@ class BentoAPI {
         let lastError = null;
         
         // 各プロキシを順番に試行
-        for (const proxy of this.corsProxies) {
+        for (let i = 0; i < this.corsProxies.length; i++) {
+            const proxy = this.corsProxies[i];
             try {
+                console.log(`Trying proxy ${i + 1}/${this.corsProxies.length}: ${proxy.substring(0, 30)}...`);
                 const result = await this.tryFetchWithProxy(proxy, url);
                 if (result && result.title) {
                     return result;
                 }
             } catch (error) {
                 lastError = error;
-                console.log(`Proxy failed: ${proxy}`, error.message);
+                console.log(`Proxy ${i + 1} failed:`, error.message);
             }
         }
         
         // 全プロキシ失敗時はURLからタイトルを推測
+        console.log('All proxies failed, extracting from URL');
         return this.extractFromUrl(url);
     }
 
@@ -226,7 +229,7 @@ class BentoAPI {
         const proxyUrl = proxy + encodeURIComponent(targetUrl);
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒に延長
         
         try {
             const response = await fetch(proxyUrl, {
@@ -251,6 +254,10 @@ class BentoAPI {
             return this.parseOGP(html, targetUrl);
         } catch (error) {
             clearTimeout(timeoutId);
+            // タイムアウトエラーの場合は次のプロキシを試す
+            if (error.name === 'AbortError') {
+                throw new Error('Timeout');
+            }
             throw error;
         }
     }
