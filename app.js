@@ -336,8 +336,13 @@ async function runSetup() {
         // 通知を非表示
         ui.showSetupNotice(false);
         
-        // データを再読み込み
+        // カテゴリとデータを再読み込み
+        await loadCategories();
         await loadShops();
+        
+        // カテゴリ一覧を更新
+        const categories = await api.getCategories();
+        ui.renderCategoryList(categories);
         
         // モーダルを閉じる
         setTimeout(() => {
