@@ -190,9 +190,7 @@ async function fetchOGPData() {
         if (ogpData.image && !ui.elements.shopImage.value) {
             ui.elements.shopImage.value = ogpData.image;
         }
-        if (ogpData.description && !ui.elements.shopDescription.value) {
-            ui.elements.shopDescription.value = ogpData.description;
-        }
+        // メモは自動入力しない（手動入力のみ）
         
         if (ogpData.title) {
             ui.showToast('情報を取得しました');
