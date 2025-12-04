@@ -59,24 +59,20 @@ class Config {
         return { ...this.settings };
     }
 
-    // 初回セットアップが完了しているか
     isReady() {
         return this.settings.isSetupComplete && this.settings.gasUrl;
     }
 
-    // セットアップ完了をマーク
     markSetupComplete() {
         this.save({ isSetupComplete: true });
     }
 
-    // 設定をリセット
     reset() {
         localStorage.removeItem('bentoNaviConfig');
         this.settings = { ...DEFAULT_CONFIG };
         CATEGORIES = { all: 'すべて', ...DEFAULT_CATEGORIES };
     }
 
-    // カテゴリを更新（スプレッドシートから取得したデータで）
     updateCategories(categoriesArray) {
         CATEGORIES = { all: 'すべて' };
         categoriesArray.forEach(cat => {
@@ -85,7 +81,6 @@ class Config {
         this.categoriesLoaded = true;
     }
 
-    // 全カテゴリ取得（allを除く）
     getAllCategoriesWithoutAll() {
         const cats = { ...CATEGORIES };
         delete cats.all;
@@ -105,7 +100,7 @@ const GAS_CODE = `// ===========================
 // 4. 実行ユーザー：「自分」
 // 5. アクセスできるユーザー：「全員」
 // 6. デプロイしてURLを取得
-// 7. サイトの設定画面にURLを入力して「初回セットアップ」
+// 7. サイトの設定画面にURLを入力して「セットアップを実行」
 
 function doGet(e) {
   return handleRequest(e);
@@ -142,19 +137,16 @@ function handleRequest(e) {
   }
 }
 
-// 初回セットアップ - シートとヘッダーを作成
+// セットアップ
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const spreadsheetId = ss.getId();
-  const spreadsheetUrl = ss.getUrl();
   
-  // shopsシートを作成または取得
+  // shopsシート
   let shopsSheet = ss.getSheetByName('shops');
   if (!shopsSheet) {
     shopsSheet = ss.insertSheet('shops');
   }
   
-  // shopsヘッダー確認・設定
   const firstRow = shopsSheet.getRange(1, 1, 1, 9).getValues()[0];
   if (firstRow[0] !== 'id') {
     const headers = ['id', 'url', 'name', 'category', 'area', 'price', 'image', 'description', 'createdAt'];
@@ -163,26 +155,15 @@ function setup() {
     headerRange.setFontWeight('bold');
     headerRange.setBackground('#333333');
     headerRange.setFontColor('#FFFFFF');
-    
-    shopsSheet.setColumnWidth(1, 140);
-    shopsSheet.setColumnWidth(2, 250);
-    shopsSheet.setColumnWidth(3, 180);
-    shopsSheet.setColumnWidth(4, 120);
-    shopsSheet.setColumnWidth(5, 120);
-    shopsSheet.setColumnWidth(6, 100);
-    shopsSheet.setColumnWidth(7, 250);
-    shopsSheet.setColumnWidth(8, 300);
-    shopsSheet.setColumnWidth(9, 160);
     shopsSheet.setFrozenRows(1);
   }
   
-  // categoriesシートを作成または取得
+  // categoriesシート
   let catSheet = ss.getSheetByName('categories');
   if (!catSheet) {
     catSheet = ss.insertSheet('categories');
   }
   
-  // categoriesヘッダー確認・設定
   const catFirstRow = catSheet.getRange(1, 1, 1, 4).getValues()[0];
   if (catFirstRow[0] !== 'id') {
     const catHeaders = ['id', 'name', 'isDefault', 'createdAt'];
@@ -191,14 +172,9 @@ function setup() {
     catHeaderRange.setFontWeight('bold');
     catHeaderRange.setBackground('#333333');
     catHeaderRange.setFontColor('#FFFFFF');
-    
-    catSheet.setColumnWidth(1, 140);
-    catSheet.setColumnWidth(2, 180);
-    catSheet.setColumnWidth(3, 80);
-    catSheet.setColumnWidth(4, 160);
     catSheet.setFrozenRows(1);
     
-    // デフォルトカテゴリを追加
+    // デフォルトカテゴリ
     const defaultCats = [
       ['onigiri', 'おにぎり・サンド', true, new Date().toISOString()],
       ['meat', '肉・魚', true, new Date().toISOString()],
@@ -211,27 +187,18 @@ function setup() {
     catSheet.getRange(2, 1, defaultCats.length, 4).setValues(defaultCats);
   }
   
-  return createResponse({ 
-    success: true, 
-    message: 'セットアップが完了しました',
-    spreadsheetId: spreadsheetId,
-    spreadsheetUrl: spreadsheetUrl
-  });
+  return createResponse({ success: true, message: 'セットアップ完了' });
 }
 
-// お店一覧を取得
+// お店一覧取得
 function getShops() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('shops');
   
-  if (!sheet) {
-    return createResponse({ success: true, shops: [] });
-  }
+  if (!sheet) return createResponse({ success: true, shops: [] });
   
   const lastRow = sheet.getLastRow();
-  if (lastRow <= 1) {
-    return createResponse({ success: true, shops: [] });
-  }
+  if (lastRow <= 1) return createResponse({ success: true, shops: [] });
   
   const data = sheet.getRange(1, 1, lastRow, 9).getValues();
   const headers = data[0];
@@ -240,31 +207,32 @@ function getShops() {
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (!row[0]) continue;
-    
     const shop = {};
-    headers.forEach((header, index) => {
-      shop[header] = row[index] !== undefined ? row[index] : '';
-    });
+    headers.forEach((h, idx) => shop[h] = row[idx] || '');
     shops.push(shop);
   }
   
   return createResponse({ success: true, shops: shops });
 }
 
-// お店を追加
+// お店追加
 function addShop(e) {
-  const data = JSON.parse(e.postData.contents);
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName('shops');
-  
-  if (!sheet) {
-    setup();
-    sheet = ss.getSheetByName('shops');
+  let data;
+  if (e.parameter.data) {
+    const decoded = Utilities.newBlob(Utilities.base64Decode(e.parameter.data)).getDataAsString('UTF-8');
+    data = JSON.parse(decoded);
+  } else if (e.postData && e.postData.contents) {
+    data = JSON.parse(e.postData.contents);
+  } else {
+    return createResponse({ success: false, error: 'データがありません' });
   }
   
-  const newId = data.id || Date.now().toString();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('shops');
+  if (!sheet) { setup(); sheet = ss.getSheetByName('shops'); }
+  
   const newRow = [
-    newId,
+    data.id || Date.now().toString(),
     data.url || '',
     data.name || '',
     data.category || '',
@@ -277,38 +245,17 @@ function addShop(e) {
   
   sheet.appendRow(newRow);
   
-  return createResponse({ 
-    success: true, 
-    message: 'お店を追加しました',
-    shop: {
-      id: newRow[0],
-      url: newRow[1],
-      name: newRow[2],
-      category: newRow[3],
-      area: newRow[4],
-      price: newRow[5],
-      image: newRow[6],
-      description: newRow[7],
-      createdAt: newRow[8]
-    }
-  });
+  return createResponse({ success: true, shop: { id: newRow[0], name: newRow[2] } });
 }
 
-// お店を削除
+// お店削除
 function deleteShop(e) {
-  const data = JSON.parse(e.postData.contents);
-  const shopId = data.id;
-  
-  if (!shopId) {
-    return createResponse({ success: false, error: 'IDが指定されていません' });
-  }
+  const shopId = e.parameter.id;
+  if (!shopId) return createResponse({ success: false, error: 'IDが必要です' });
   
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('shops');
-  
-  if (!sheet) {
-    return createResponse({ success: false, error: 'シートが見つかりません' });
-  }
+  if (!sheet) return createResponse({ success: false, error: 'シートがありません' });
   
   const lastRow = sheet.getLastRow();
   const ids = sheet.getRange(1, 1, lastRow, 1).getValues();
@@ -316,35 +263,29 @@ function deleteShop(e) {
   for (let i = 1; i < ids.length; i++) {
     if (ids[i][0].toString() === shopId.toString()) {
       sheet.deleteRow(i + 1);
-      return createResponse({ success: true, message: 'お店を削除しました' });
+      return createResponse({ success: true });
     }
   }
   
-  return createResponse({ success: false, error: '該当するお店が見つかりません' });
+  return createResponse({ success: false, error: '見つかりません' });
 }
 
-// カテゴリ一覧を取得
+// カテゴリ一覧取得
 function getCategories() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('categories');
   
-  if (!sheet) {
-    return createResponse({ success: true, categories: [] });
-  }
+  if (!sheet) return createResponse({ success: true, categories: [] });
   
   const lastRow = sheet.getLastRow();
-  if (lastRow <= 1) {
-    return createResponse({ success: true, categories: [] });
-  }
+  if (lastRow <= 1) return createResponse({ success: true, categories: [] });
   
   const data = sheet.getRange(1, 1, lastRow, 4).getValues();
-  const headers = data[0];
   const categories = [];
   
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (!row[0]) continue;
-    
     categories.push({
       id: row[0],
       name: row[1],
@@ -356,66 +297,48 @@ function getCategories() {
   return createResponse({ success: true, categories: categories });
 }
 
-// カテゴリを追加
+// カテゴリ追加
 function addCategory(e) {
-  const data = JSON.parse(e.postData.contents);
+  const catId = e.parameter.id || 'cat_' + Date.now();
+  const catName = e.parameter.name;
+  
+  if (!catName) return createResponse({ success: false, error: '名前が必要です' });
+  
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName('categories');
+  if (!sheet) { setup(); sheet = ss.getSheetByName('categories'); }
   
-  if (!sheet) {
-    setup();
-    sheet = ss.getSheetByName('categories');
-  }
+  sheet.appendRow([catId, catName, false, new Date().toISOString()]);
   
-  const newRow = [
-    data.id || 'cat_' + Date.now(),
-    data.name || '',
-    false,
-    new Date().toISOString()
-  ];
-  
-  sheet.appendRow(newRow);
-  
-  return createResponse({ 
-    success: true, 
-    category: { id: newRow[0], name: newRow[1], isDefault: false }
-  });
+  return createResponse({ success: true, category: { id: catId, name: catName, isDefault: false } });
 }
 
-// カテゴリを削除
+// カテゴリ削除
 function deleteCategory(e) {
-  const data = JSON.parse(e.postData.contents);
-  const catId = data.id;
-  
-  if (!catId) {
-    return createResponse({ success: false, error: 'IDが指定されていません' });
-  }
+  const catId = e.parameter.id;
+  if (!catId) return createResponse({ success: false, error: 'IDが必要です' });
   
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('categories');
-  
-  if (!sheet) {
-    return createResponse({ success: false, error: 'シートが見つかりません' });
-  }
+  if (!sheet) return createResponse({ success: false, error: 'シートがありません' });
   
   const lastRow = sheet.getLastRow();
   const values = sheet.getRange(1, 1, lastRow, 3).getValues();
   
   for (let i = 1; i < values.length; i++) {
     if (values[i][0].toString() === catId.toString()) {
-      // デフォルトカテゴリは削除不可
       if (values[i][2] === true || values[i][2] === 'true') {
-        return createResponse({ success: false, error: 'デフォルトカテゴリは削除できません' });
+        return createResponse({ success: false, error: 'デフォルトは削除不可' });
       }
       sheet.deleteRow(i + 1);
-      return createResponse({ success: true, message: 'カテゴリを削除しました' });
+      return createResponse({ success: true });
     }
   }
   
-  return createResponse({ success: false, error: '該当するカテゴリが見つかりません' });
+  return createResponse({ success: false, error: '見つかりません' });
 }
 
-// JSONレスポンスを作成
+// レスポンス生成
 function createResponse(data) {
   return ContentService
     .createTextOutput(JSON.stringify(data))
