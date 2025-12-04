@@ -32,7 +32,7 @@ class UI {
             previewTitle: document.getElementById('previewTitle'),
             previewUrl: document.getElementById('previewUrl'),
             shopName: document.getElementById('shopName'),
-            shopCategory: document.getElementById('shopCategory'),
+            shopCategoryCheckboxes: document.getElementById('shopCategoryCheckboxes'),
             shopArea: document.getElementById('shopArea'),
             shopPrice: document.getElementById('shopPrice'),
             shopImage: document.getElementById('shopImage'),
@@ -75,7 +75,12 @@ class UI {
         
         this.elements.noResults.style.display = 'none';
         
-        this.elements.shopsGrid.innerHTML = shops.map(shop => `
+        this.elements.shopsGrid.innerHTML = shops.map(shop => {
+            // カテゴリを配列として処理（カンマ区切り文字列対応）
+            const categories = shop.category ? shop.category.split(',').map(c => c.trim()) : [];
+            const categoryLabels = categories.map(c => CATEGORIES[c] || c).join(', ');
+            
+            return `
             <article class="shop-card" onclick="window.open('${this.escapeHtml(shop.url)}', '_blank')">
                 <img 
                     src="${this.escapeHtml(shop.image) || 'https://via.placeholder.com/400x200?text=No+Image'}" 
@@ -84,7 +89,7 @@ class UI {
                     onerror="this.src='https://via.placeholder.com/400x200?text=No+Image'"
                 >
                 <div class="shop-content">
-                    <span class="shop-category">${CATEGORIES[shop.category] || shop.category}</span>
+                    <span class="shop-category">${categoryLabels || 'その他'}</span>
                     <h3 class="shop-name">${this.escapeHtml(shop.name)}</h3>
                     ${shop.description ? `<p class="shop-description">${this.escapeHtml(shop.description)}</p>` : ''}
                     <div class="shop-meta">
@@ -93,7 +98,7 @@ class UI {
                     </div>
                 </div>
             </article>
-        `).join('');
+        `}).join('');
     }
 
     updateAreaFilter(shops) {
