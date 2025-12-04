@@ -2,9 +2,8 @@
 // config.js - 設定管理
 // ===========================
 
-// カテゴリマッピング
-const CATEGORIES = {
-    all: 'すべて',
+// デフォルトカテゴリ
+const DEFAULT_CATEGORIES = {
     onigiri: 'おにぎり・サンド',
     meat: '肉・魚',
     chinese: '中華',
@@ -13,6 +12,9 @@ const CATEGORIES = {
     catering: 'ケータリング',
     other: 'その他'
 };
+
+// カテゴリマッピング（動的に更新される）
+let CATEGORIES = { all: 'すべて', ...DEFAULT_CATEGORIES };
 
 // 価格帯マッピング
 const PRICE_RANGES = {
@@ -26,6 +28,7 @@ const PRICE_RANGES = {
 const DEFAULT_CONFIG = {
     gasUrl: '',
     isSetupComplete: false,
+    customCategories: {},  // ユーザー追加カテゴリ
     ogpProxy: 'https://api.allorigins.win/get?url='
 };
 
@@ -33,6 +36,7 @@ const DEFAULT_CONFIG = {
 class Config {
     constructor() {
         this.settings = this.load();
+        this.updateCategories();
     }
 
     load() {
@@ -70,6 +74,49 @@ class Config {
     reset() {
         localStorage.removeItem('bentoNaviConfig');
         this.settings = { ...DEFAULT_CONFIG };
+        this.updateCategories();
+    }
+
+    // カテゴリを追加
+    addCategory(id, name) {
+        const customCategories = { ...this.settings.customCategories };
+        customCategories[id] = name;
+        this.save({ customCategories });
+        this.updateCategories();
+    }
+
+    // カテゴリを削除
+    removeCategory(id) {
+        // デフォルトカテゴリは削除不可
+        if (DEFAULT_CATEGORIES[id]) {
+            return false;
+        }
+        const customCategories = { ...this.settings.customCategories };
+        delete customCategories[id];
+        this.save({ customCategories });
+        this.updateCategories();
+        return true;
+    }
+
+    // カテゴリ一覧を更新
+    updateCategories() {
+        CATEGORIES = {
+            all: 'すべて',
+            ...DEFAULT_CATEGORIES,
+            ...this.settings.customCategories
+        };
+    }
+
+    // カスタムカテゴリのみ取得
+    getCustomCategories() {
+        return { ...this.settings.customCategories };
+    }
+
+    // 全カテゴリ取得（allを除く）
+    getAllCategoriesWithoutAll() {
+        const cats = { ...CATEGORIES };
+        delete cats.all;
+        return cats;
     }
 }
 
