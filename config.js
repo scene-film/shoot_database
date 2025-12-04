@@ -57,7 +57,7 @@ class Config {
     }
 
     // 初回セットアップが完了しているか
-    isSetupComplete() {
+    isReady() {
         return this.settings.isSetupComplete && this.settings.gasUrl;
     }
 
