@@ -28,10 +28,10 @@ class BentoAPI {
         }
 
         try {
-            const url = `${gasUrl}?action=setup`;
+            // GASへはGETリクエストが安定
+            const url = `${gasUrl}?action=setup&t=${Date.now()}`;
             const response = await fetch(url, { 
-                method: 'POST',
-                mode: 'cors',
+                method: 'GET',
                 redirect: 'follow'
             });
             
@@ -110,27 +110,21 @@ class BentoAPI {
             createdAt: new Date().toISOString()
         };
 
-        // GAS URLが設定されていない場合はエラー
         if (!this.hasGasUrl()) {
-            throw new Error('スプレッドシートが設定されていません。設定画面から初回セットアップを行ってください。');
+            throw new Error('スプレッドシートが設定されていません。設定画面からセットアップを行ってください。');
         }
 
         try {
             const gasUrl = config.get('gasUrl');
-            const url = `${gasUrl}?action=addShop`;
+            // データをBase64エンコードしてGETパラメータで送信
+            const encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(newShop))));
+            const url = `${gasUrl}?action=addShop&data=${encodeURIComponent(encodedData)}&t=${Date.now()}`;
             
-            // GASへのPOSTリクエスト（CORSリダイレクト対応）
             const response = await fetch(url, {
-                method: 'POST',
-                mode: 'cors',
-                redirect: 'follow',
-                headers: {
-                    'Content-Type': 'text/plain'  // GASではtext/plainが安定
-                },
-                body: JSON.stringify(newShop)
+                method: 'GET',
+                redirect: 'follow'
             });
             
-            // GASはリダイレクト後にレスポンスを返す
             const text = await response.text();
             let data;
             try {
@@ -162,18 +156,19 @@ class BentoAPI {
 
         try {
             const gasUrl = config.get('gasUrl');
-            const url = `${gasUrl}?action=deleteShop`;
+            const url = `${gasUrl}?action=deleteShop&id=${encodeURIComponent(shopId)}&t=${Date.now()}`;
             const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: shopId })
+                method: 'GET',
+                redirect: 'follow'
             });
             
-            if (!response.ok) {
-                throw new Error('削除に失敗しました');
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error('レスポンスの解析に失敗しました');
             }
-            
-            const data = await response.json();
             
             if (!data.success) {
                 throw new Error(data.error || '削除に失敗しました');
@@ -234,23 +229,15 @@ class BentoAPI {
             throw new Error('スプレッドシートが設定されていません');
         }
 
-        const catData = {
-            id: 'cat_' + Date.now(),
-            name: name
-        };
+        const catId = 'cat_' + Date.now();
 
         try {
             const gasUrl = config.get('gasUrl');
-            const url = `${gasUrl}?action=addCategory`;
+            const url = `${gasUrl}?action=addCategory&id=${encodeURIComponent(catId)}&name=${encodeURIComponent(name)}&t=${Date.now()}`;
             
             const response = await fetch(url, {
-                method: 'POST',
-                mode: 'cors',
-                redirect: 'follow',
-                headers: {
-                    'Content-Type': 'text/plain'
-                },
-                body: JSON.stringify(catData)
+                method: 'GET',
+                redirect: 'follow'
             });
             
             const text = await response.text();
@@ -284,16 +271,11 @@ class BentoAPI {
 
         try {
             const gasUrl = config.get('gasUrl');
-            const url = `${gasUrl}?action=deleteCategory`;
+            const url = `${gasUrl}?action=deleteCategory&id=${encodeURIComponent(catId)}&t=${Date.now()}`;
             
             const response = await fetch(url, {
-                method: 'POST',
-                mode: 'cors',
-                redirect: 'follow',
-                headers: {
-                    'Content-Type': 'text/plain'
-                },
-                body: JSON.stringify({ id: catId })
+                method: 'GET',
+                redirect: 'follow'
             });
             
             const text = await response.text();
