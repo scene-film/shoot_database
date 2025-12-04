@@ -50,6 +50,30 @@ function initEventListeners() {
     ui.elements.shopForm.addEventListener('submit', handleFormSubmit);
     ui.elements.fetchBtn.addEventListener('click', fetchOGPData);
     
+    // URL入力時に自動でOGP取得
+    let urlInputTimeout;
+    ui.elements.shopUrl.addEventListener('input', (e) => {
+        clearTimeout(urlInputTimeout);
+        const url = e.target.value.trim();
+        
+        // 有効なURLの場合、1秒後に自動取得
+        if (url && ui.isValidUrl(url)) {
+            urlInputTimeout = setTimeout(() => {
+                fetchOGPData();
+            }, 1000);
+        }
+    });
+    
+    // ペースト時は即座に取得
+    ui.elements.shopUrl.addEventListener('paste', (e) => {
+        setTimeout(() => {
+            const url = ui.elements.shopUrl.value.trim();
+            if (url && ui.isValidUrl(url)) {
+                fetchOGPData();
+            }
+        }, 100);
+    });
+    
     // フィルター
     ui.elements.categoryChips.addEventListener('click', (e) => {
         if (e.target.classList.contains('chip')) {
@@ -141,12 +165,10 @@ async function fetchOGPData() {
     const url = ui.elements.shopUrl.value.trim();
     
     if (!url) {
-        ui.showToast('URLを入力してください', 'error');
         return;
     }
     
     if (!ui.isValidUrl(url)) {
-        ui.showToast('有効なURLを入力してください', 'error');
         return;
     }
     
@@ -161,6 +183,7 @@ async function fetchOGPData() {
             image: ogpData.image
         });
         
+        // 取得したデータを自動入力（空欄の場合のみ）
         if (ogpData.title && !ui.elements.shopName.value) {
             ui.elements.shopName.value = ogpData.title;
         }
@@ -171,16 +194,22 @@ async function fetchOGPData() {
             ui.elements.shopDescription.value = ogpData.description;
         }
         
-        ui.showToast('情報を取得しました');
+        if (ogpData.title) {
+            ui.showToast('情報を取得しました');
+        } else {
+            ui.showToast('一部情報を取得できませんでした', 'error');
+        }
     } catch (error) {
         console.error('OGP fetch error:', error);
-        ui.showToast('情報の取得に失敗しました', 'error');
         
+        // エラー時もプレビューは表示
         ui.showPreview({
             title: 'タイトル未取得',
             url: url,
             image: null
         });
+        
+        ui.showToast('情報の取得に失敗しました', 'error');
     } finally {
         ui.setFetchButtonLoading(false);
     }
