@@ -29,13 +29,20 @@ class BentoAPI {
 
         try {
             const url = `${gasUrl}?action=setup`;
-            const response = await fetch(url, { method: 'POST' });
+            const response = await fetch(url, { 
+                method: 'POST',
+                mode: 'cors',
+                redirect: 'follow'
+            });
             
-            if (!response.ok) {
-                throw new Error('セットアップに失敗しました');
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error('Response parse error:', text);
+                throw new Error('レスポンスの解析に失敗しました');
             }
-            
-            const data = await response.json();
             
             if (!data.success) {
                 throw new Error(data.error || 'セットアップに失敗しました');
@@ -111,17 +118,27 @@ class BentoAPI {
         try {
             const gasUrl = config.get('gasUrl');
             const url = `${gasUrl}?action=addShop`;
+            
+            // GASへのPOSTリクエスト（CORSリダイレクト対応）
             const response = await fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                mode: 'cors',
+                redirect: 'follow',
+                headers: {
+                    'Content-Type': 'text/plain'  // GASではtext/plainが安定
+                },
                 body: JSON.stringify(newShop)
             });
             
-            if (!response.ok) {
-                throw new Error('登録に失敗しました');
+            // GASはリダイレクト後にレスポンスを返す
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error('Response parse error:', text);
+                throw new Error('レスポンスの解析に失敗しました');
             }
-            
-            const data = await response.json();
             
             if (!data.success) {
                 throw new Error(data.error || '登録に失敗しました');
