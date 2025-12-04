@@ -311,11 +311,84 @@ class BentoAPI {
         // 説明取得
         let description = getMetaContent('og:description', 'twitter:description', 'description');
         
-        // 画像取得
-        let image = getMetaContent('og:image', 'twitter:image', 'twitter:image:src', 'image');
+        // 画像取得（優先順位付きで複数ソースを試行）
+        let image = null;
+        
+        // 1. OGP/Twitter画像
+        image = getMetaContent('og:image', 'og:image:url', 'og:image:secure_url', 'twitter:image', 'twitter:image:src');
+        
+        // 2. Schema.org画像
+        if (!image) {
+            const schemaImage = doc.querySelector('[itemprop="image"]');
+            if (schemaImage) {
+                image = schemaImage.getAttribute('content') || schemaImage.getAttribute('src') || schemaImage.getAttribute('href');
+            }
+        }
+        
+        // 3. Apple Touch Icon（高解像度）
+        if (!image) {
+            const appleIcon = doc.querySelector('link[rel="apple-touch-icon"]') ||
+                              doc.querySelector('link[rel="apple-touch-icon-precomposed"]');
+            if (appleIcon) {
+                image = appleIcon.getAttribute('href');
+            }
+        }
+        
+        // 4. 大きいfavicon
+        if (!image) {
+            const icons = doc.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
+            let largestIcon = null;
+            let largestSize = 0;
+            
+            icons.forEach(icon => {
+                const sizes = icon.getAttribute('sizes');
+                if (sizes) {
+                    const size = parseInt(sizes.split('x')[0]) || 0;
+                    if (size > largestSize) {
+                        largestSize = size;
+                        largestIcon = icon.getAttribute('href');
+                    }
+                } else if (!largestIcon) {
+                    largestIcon = icon.getAttribute('href');
+                }
+            });
+            
+            if (largestIcon) {
+                image = largestIcon;
+            }
+        }
+        
+        // 5. ページ内の最初の大きな画像
+        if (!image) {
+            const imgs = doc.querySelectorAll('img[src]');
+            for (const img of imgs) {
+                const src = img.getAttribute('src');
+                const width = parseInt(img.getAttribute('width')) || 0;
+                const height = parseInt(img.getAttribute('height')) || 0;
+                
+                // ロゴやヘッダー画像の可能性が高いものを優先
+                const alt = (img.getAttribute('alt') || '').toLowerCase();
+                const className = (img.getAttribute('class') || '').toLowerCase();
+                
+                if (alt.includes('logo') || className.includes('logo') || 
+                    alt.includes('header') || className.includes('header') ||
+                    (width >= 100 && height >= 100)) {
+                    image = src;
+                    break;
+                }
+            }
+        }
+        
+        // 6. 最後の手段：favicon.ico
+        if (!image) {
+            try {
+                const baseUrl = new URL(sourceUrl);
+                image = baseUrl.origin + '/favicon.ico';
+            } catch (e) {}
+        }
         
         // 相対URLを絶対URLに変換
-        if (image && !image.startsWith('http')) {
+        if (image && !image.startsWith('http') && !image.startsWith('data:')) {
             try {
                 const baseUrl = new URL(sourceUrl);
                 if (image.startsWith('//')) {
