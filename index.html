@@ -36,14 +36,7 @@
                 <div class="filter-group">
                     <label class="filter-label">カテゴリ</label>
                     <div class="category-chips" id="categoryChips">
-                        <button class="chip active" data-category="all">すべて</button>
-                        <button class="chip" data-category="onigiri">おにぎり・サンド</button>
-                        <button class="chip" data-category="meat">肉・魚</button>
-                        <button class="chip" data-category="chinese">中華</button>
-                        <button class="chip" data-category="curry">カレー</button>
-                        <button class="chip" data-category="noodle">麺類</button>
-                        <button class="chip" data-category="catering">ケータリング</button>
-                        <button class="chip" data-category="other">その他</button>
+                        <!-- 動的に生成される -->
                     </div>
                 </div>
                 <div class="filter-row">
@@ -123,34 +116,7 @@
                     <div class="form-group">
                         <label class="form-label">カテゴリ <span class="required">*</span></label>
                         <div class="category-checkboxes" id="shopCategoryCheckboxes">
-                            <label class="checkbox-label">
-                                <input type="checkbox" name="category" value="onigiri">
-                                <span>おにぎり・サンド</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" name="category" value="meat">
-                                <span>肉・魚</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" name="category" value="chinese">
-                                <span>中華</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" name="category" value="curry">
-                                <span>カレー</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" name="category" value="noodle">
-                                <span>麺類</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" name="category" value="catering">
-                                <span>ケータリング</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" name="category" value="other">
-                                <span>その他</span>
-                            </label>
+                            <!-- 動的に生成される -->
                         </div>
                     </div>
                 </div>
@@ -230,6 +196,18 @@
                 <div class="form-actions">
                     <button type="button" class="btn-danger" id="resetSettings">設定をリセット</button>
                     <button type="button" class="btn-cancel" id="cancelSettings">閉じる</button>
+                </div>
+
+                <!-- カテゴリ管理 -->
+                <div class="settings-section">
+                    <h3>カテゴリ管理</h3>
+                    <div class="category-add-form">
+                        <input type="text" class="form-input" id="newCategoryName" placeholder="カテゴリ名（例: 和食）">
+                        <button type="button" class="btn-secondary" id="addCategoryBtn">追加</button>
+                    </div>
+                    <div class="category-list" id="categoryList">
+                        <!-- カテゴリ一覧がここに表示される -->
+                    </div>
                 </div>
             </div>
         </div>
