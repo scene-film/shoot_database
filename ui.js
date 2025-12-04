@@ -49,6 +49,11 @@ class UI {
             copyGasCode: document.getElementById('copyGasCode'),
             resetSettings: document.getElementById('resetSettings'),
             
+            // カテゴリ管理
+            newCategoryName: document.getElementById('newCategoryName'),
+            addCategoryBtn: document.getElementById('addCategoryBtn'),
+            categoryList: document.getElementById('categoryList'),
+            
             setupNotice: document.getElementById('setupNotice'),
             setupNoticeBtn: document.getElementById('setupNoticeBtn'),
             
@@ -62,6 +67,45 @@ class UI {
         if (this.elements.setupNotice) {
             this.elements.setupNotice.style.display = show ? 'block' : 'none';
         }
+    }
+
+    // カテゴリ一覧を描画
+    renderCategoryList() {
+        const allCategories = config.getAllCategoriesWithoutAll();
+        const customCategories = config.getCustomCategories();
+        
+        this.elements.categoryList.innerHTML = Object.entries(allCategories).map(([id, name]) => {
+            const isDefault = !customCategories[id];
+            return `
+                <div class="category-item ${isDefault ? 'default' : ''}" data-id="${id}">
+                    <span>${this.escapeHtml(name)}</span>
+                    <button type="button" class="delete-btn" title="削除">&times;</button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // フィルターのカテゴリチップを更新
+    updateFilterCategoryChips() {
+        const container = this.elements.categoryChips;
+        const currentActive = container.querySelector('.chip.active')?.dataset.category || 'all';
+        
+        container.innerHTML = Object.entries(CATEGORIES).map(([id, name]) => `
+            <button class="chip ${id === currentActive ? 'active' : ''}" data-category="${id}">${name}</button>
+        `).join('');
+    }
+
+    // 登録フォームのカテゴリチェックボックスを更新
+    updateFormCategoryCheckboxes() {
+        const container = this.elements.shopCategoryCheckboxes;
+        const categories = config.getAllCategoriesWithoutAll();
+        
+        container.innerHTML = Object.entries(categories).map(([id, name]) => `
+            <label class="checkbox-label">
+                <input type="checkbox" name="category" value="${id}">
+                <span>${this.escapeHtml(name)}</span>
+            </label>
+        `).join('');
     }
 
     renderShops(shops) {
@@ -164,6 +208,9 @@ class UI {
         } else {
             this.updateConnectionStatus('demo', '未設定（デモモード）');
         }
+        
+        // カテゴリ一覧を描画
+        this.renderCategoryList();
         
         this.elements.settingsOverlay.classList.add('active');
         document.body.style.overflow = 'hidden';
