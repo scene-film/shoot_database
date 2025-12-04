@@ -811,6 +811,68 @@ body {
     color: #fff;
 }
 
+/* Settings Section */
+.settings-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
+}
+
+.settings-section h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.category-add-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.category-add-form .form-input {
+    flex: 1;
+}
+
+.category-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.category-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+}
+
+.category-item.default {
+    background: var(--color-border-light);
+}
+
+.category-item .delete-btn {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 2px;
+    line-height: 1;
+}
+
+.category-item .delete-btn:hover {
+    color: var(--color-error);
+}
+
+.category-item.default .delete-btn {
+    display: none;
+}
+
 /* ===========================
    Toast
    =========================== */
