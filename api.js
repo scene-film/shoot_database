@@ -187,6 +187,136 @@ class BentoAPI {
     }
 
     // ===========================
+    // カテゴリ取得
+    // ===========================
+
+    async getCategories() {
+        if (!this.hasGasUrl()) {
+            // デモモード時はデフォルトカテゴリを返す
+            return Object.entries(DEFAULT_CATEGORIES).map(([id, name]) => ({
+                id,
+                name,
+                isDefault: true
+            }));
+        }
+
+        try {
+            const gasUrl = config.get('gasUrl');
+            const url = `${gasUrl}?action=getCategories`;
+            const response = await fetch(url);
+            
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error('Response parse error:', text);
+                throw new Error('レスポンスの解析に失敗しました');
+            }
+            
+            if (!data.success) {
+                throw new Error(data.error || 'カテゴリの取得に失敗しました');
+            }
+            
+            return data.categories || [];
+        } catch (error) {
+            console.error('Get categories error:', error);
+            throw error;
+        }
+    }
+
+    // ===========================
+    // カテゴリ追加
+    // ===========================
+
+    async addCategory(name) {
+        if (!this.hasGasUrl()) {
+            throw new Error('スプレッドシートが設定されていません');
+        }
+
+        const catData = {
+            id: 'cat_' + Date.now(),
+            name: name
+        };
+
+        try {
+            const gasUrl = config.get('gasUrl');
+            const url = `${gasUrl}?action=addCategory`;
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                mode: 'cors',
+                redirect: 'follow',
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
+                body: JSON.stringify(catData)
+            });
+            
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error('Response parse error:', text);
+                throw new Error('レスポンスの解析に失敗しました');
+            }
+            
+            if (!data.success) {
+                throw new Error(data.error || 'カテゴリの追加に失敗しました');
+            }
+            
+            return data.category;
+        } catch (error) {
+            console.error('Add category error:', error);
+            throw error;
+        }
+    }
+
+    // ===========================
+    // カテゴリ削除
+    // ===========================
+
+    async deleteCategory(catId) {
+        if (!this.hasGasUrl()) {
+            throw new Error('スプレッドシートが設定されていません');
+        }
+
+        try {
+            const gasUrl = config.get('gasUrl');
+            const url = `${gasUrl}?action=deleteCategory`;
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                mode: 'cors',
+                redirect: 'follow',
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
+                body: JSON.stringify({ id: catId })
+            });
+            
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error('Response parse error:', text);
+                throw new Error('レスポンスの解析に失敗しました');
+            }
+            
+            if (!data.success) {
+                throw new Error(data.error || 'カテゴリの削除に失敗しました');
+            }
+            
+            return data;
+        } catch (error) {
+            console.error('Delete category error:', error);
+            throw error;
+        }
+    }
+
+    // ===========================
     // 接続テスト
     // ===========================
 
