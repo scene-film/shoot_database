@@ -70,15 +70,17 @@ class UI {
     }
 
     // カテゴリ一覧を描画
-    renderCategoryList() {
-        const allCategories = config.getAllCategoriesWithoutAll();
-        const customCategories = config.getCustomCategories();
+    renderCategoryList(categories) {
+        if (!categories || categories.length === 0) {
+            this.elements.categoryList.innerHTML = '<p style="color: #888; font-size: 13px;">カテゴリがありません</p>';
+            return;
+        }
         
-        this.elements.categoryList.innerHTML = Object.entries(allCategories).map(([id, name]) => {
-            const isDefault = !customCategories[id];
+        this.elements.categoryList.innerHTML = categories.map(cat => {
+            const isDefault = cat.isDefault === true || cat.isDefault === 'true';
             return `
-                <div class="category-item ${isDefault ? 'default' : ''}" data-id="${id}">
-                    <span>${this.escapeHtml(name)}</span>
+                <div class="category-item ${isDefault ? 'default' : ''}" data-id="${cat.id}">
+                    <span>${this.escapeHtml(cat.name)}</span>
                     <button type="button" class="delete-btn" title="削除">&times;</button>
                 </div>
             `;
@@ -199,7 +201,7 @@ class UI {
         this.elements.previewCard.style.display = 'none';
     }
 
-    openSettingsModal() {
+    async openSettingsModal() {
         const settings = config.getAll();
         this.elements.gasUrl.value = settings.gasUrl || '';
         
@@ -209,8 +211,13 @@ class UI {
             this.updateConnectionStatus('demo', '未設定（デモモード）');
         }
         
-        // カテゴリ一覧を描画
-        this.renderCategoryList();
+        // カテゴリ一覧を読み込んで描画
+        try {
+            const categories = await api.getCategories();
+            this.renderCategoryList(categories);
+        } catch (error) {
+            this.renderCategoryList([]);
+        }
         
         this.elements.settingsOverlay.classList.add('active');
         document.body.style.overflow = 'hidden';
