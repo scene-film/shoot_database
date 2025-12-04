@@ -122,16 +122,36 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">カテゴリ <span class="required">*</span></label>
-                        <select class="form-select" id="shopCategory" required>
-                            <option value="">選択してください</option>
-                            <option value="onigiri">おにぎり・サンドイッチ</option>
-                            <option value="meat">肉・魚</option>
-                            <option value="chinese">中華</option>
-                            <option value="curry">カレー</option>
-                            <option value="noodle">麺類</option>
-                            <option value="catering">ケータリング</option>
-                            <option value="other">その他</option>
-                        </select>
+                        <div class="category-checkboxes" id="shopCategoryCheckboxes">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="category" value="onigiri">
+                                <span>おにぎり・サンド</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="category" value="meat">
+                                <span>肉・魚</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="category" value="chinese">
+                                <span>中華</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="category" value="curry">
+                                <span>カレー</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="category" value="noodle">
+                                <span>麺類</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="category" value="catering">
+                                <span>ケータリング</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="category" value="other">
+                                <span>その他</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
