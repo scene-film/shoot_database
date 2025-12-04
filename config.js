@@ -2,7 +2,7 @@
 // config.js - 設定管理
 // ===========================
 
-// デフォルトカテゴリ
+// デフォルトカテゴリ（初期表示用・フォールバック用）
 const DEFAULT_CATEGORIES = {
     onigiri: 'おにぎり・サンド',
     meat: '肉・魚',
@@ -28,7 +28,6 @@ const PRICE_RANGES = {
 const DEFAULT_CONFIG = {
     gasUrl: '',
     isSetupComplete: false,
-    customCategories: {},  // ユーザー追加カテゴリ
     ogpProxy: 'https://api.allorigins.win/get?url='
 };
 
@@ -36,7 +35,7 @@ const DEFAULT_CONFIG = {
 class Config {
     constructor() {
         this.settings = this.load();
-        this.updateCategories();
+        this.categoriesLoaded = false;
     }
 
     load() {
@@ -74,42 +73,16 @@ class Config {
     reset() {
         localStorage.removeItem('bentoNaviConfig');
         this.settings = { ...DEFAULT_CONFIG };
-        this.updateCategories();
+        CATEGORIES = { all: 'すべて', ...DEFAULT_CATEGORIES };
     }
 
-    // カテゴリを追加
-    addCategory(id, name) {
-        const customCategories = { ...this.settings.customCategories };
-        customCategories[id] = name;
-        this.save({ customCategories });
-        this.updateCategories();
-    }
-
-    // カテゴリを削除
-    removeCategory(id) {
-        // デフォルトカテゴリは削除不可
-        if (DEFAULT_CATEGORIES[id]) {
-            return false;
-        }
-        const customCategories = { ...this.settings.customCategories };
-        delete customCategories[id];
-        this.save({ customCategories });
-        this.updateCategories();
-        return true;
-    }
-
-    // カテゴリ一覧を更新
-    updateCategories() {
-        CATEGORIES = {
-            all: 'すべて',
-            ...DEFAULT_CATEGORIES,
-            ...this.settings.customCategories
-        };
-    }
-
-    // カスタムカテゴリのみ取得
-    getCustomCategories() {
-        return { ...this.settings.customCategories };
+    // カテゴリを更新（スプレッドシートから取得したデータで）
+    updateCategories(categoriesArray) {
+        CATEGORIES = { all: 'すべて' };
+        categoriesArray.forEach(cat => {
+            CATEGORIES[cat.id] = cat.name;
+        });
+        this.categoriesLoaded = true;
     }
 
     // 全カテゴリ取得（allを除く）
@@ -155,6 +128,12 @@ function handleRequest(e) {
         return addShop(e);
       case 'deleteShop':
         return deleteShop(e);
+      case 'getCategories':
+        return getCategories();
+      case 'addCategory':
+        return addCategory(e);
+      case 'deleteCategory':
+        return deleteCategory(e);
       default:
         return createResponse({ success: false, error: 'Invalid action' });
     }
@@ -170,44 +149,67 @@ function setup() {
   const spreadsheetUrl = ss.getUrl();
   
   // shopsシートを作成または取得
-  let sheet = ss.getSheetByName('shops');
-  if (!sheet) {
-    sheet = ss.insertSheet('shops');
-  } else {
-    // 既存データがある場合はクリアしない（ヘッダーのみ確認）
-    const firstRow = sheet.getRange(1, 1, 1, 9).getValues()[0];
-    if (firstRow[0] === 'id') {
-      // 既にセットアップ済み
-      return createResponse({ 
-        success: true, 
-        message: '既にセットアップ済みです',
-        spreadsheetId: spreadsheetId,
-        spreadsheetUrl: spreadsheetUrl
-      });
-    }
+  let shopsSheet = ss.getSheetByName('shops');
+  if (!shopsSheet) {
+    shopsSheet = ss.insertSheet('shops');
   }
   
-  // ヘッダー行を設定
-  const headers = ['id', 'url', 'name', 'category', 'area', 'price', 'image', 'description', 'createdAt'];
-  const headerRange = sheet.getRange(1, 1, 1, headers.length);
-  headerRange.setValues([headers]);
-  headerRange.setFontWeight('bold');
-  headerRange.setBackground('#333333');
-  headerRange.setFontColor('#FFFFFF');
+  // shopsヘッダー確認・設定
+  const firstRow = shopsSheet.getRange(1, 1, 1, 9).getValues()[0];
+  if (firstRow[0] !== 'id') {
+    const headers = ['id', 'url', 'name', 'category', 'area', 'price', 'image', 'description', 'createdAt'];
+    const headerRange = shopsSheet.getRange(1, 1, 1, headers.length);
+    headerRange.setValues([headers]);
+    headerRange.setFontWeight('bold');
+    headerRange.setBackground('#333333');
+    headerRange.setFontColor('#FFFFFF');
+    
+    shopsSheet.setColumnWidth(1, 140);
+    shopsSheet.setColumnWidth(2, 250);
+    shopsSheet.setColumnWidth(3, 180);
+    shopsSheet.setColumnWidth(4, 120);
+    shopsSheet.setColumnWidth(5, 120);
+    shopsSheet.setColumnWidth(6, 100);
+    shopsSheet.setColumnWidth(7, 250);
+    shopsSheet.setColumnWidth(8, 300);
+    shopsSheet.setColumnWidth(9, 160);
+    shopsSheet.setFrozenRows(1);
+  }
   
-  // 列幅を調整
-  sheet.setColumnWidth(1, 140);  // id
-  sheet.setColumnWidth(2, 250);  // url
-  sheet.setColumnWidth(3, 180);  // name
-  sheet.setColumnWidth(4, 120);  // category
-  sheet.setColumnWidth(5, 120);  // area
-  sheet.setColumnWidth(6, 100);  // price
-  sheet.setColumnWidth(7, 250);  // image
-  sheet.setColumnWidth(8, 300);  // description
-  sheet.setColumnWidth(9, 160);  // createdAt
+  // categoriesシートを作成または取得
+  let catSheet = ss.getSheetByName('categories');
+  if (!catSheet) {
+    catSheet = ss.insertSheet('categories');
+  }
   
-  // 1行目を固定
-  sheet.setFrozenRows(1);
+  // categoriesヘッダー確認・設定
+  const catFirstRow = catSheet.getRange(1, 1, 1, 4).getValues()[0];
+  if (catFirstRow[0] !== 'id') {
+    const catHeaders = ['id', 'name', 'isDefault', 'createdAt'];
+    const catHeaderRange = catSheet.getRange(1, 1, 1, catHeaders.length);
+    catHeaderRange.setValues([catHeaders]);
+    catHeaderRange.setFontWeight('bold');
+    catHeaderRange.setBackground('#333333');
+    catHeaderRange.setFontColor('#FFFFFF');
+    
+    catSheet.setColumnWidth(1, 140);
+    catSheet.setColumnWidth(2, 180);
+    catSheet.setColumnWidth(3, 80);
+    catSheet.setColumnWidth(4, 160);
+    catSheet.setFrozenRows(1);
+    
+    // デフォルトカテゴリを追加
+    const defaultCats = [
+      ['onigiri', 'おにぎり・サンド', true, new Date().toISOString()],
+      ['meat', '肉・魚', true, new Date().toISOString()],
+      ['chinese', '中華', true, new Date().toISOString()],
+      ['curry', 'カレー', true, new Date().toISOString()],
+      ['noodle', '麺類', true, new Date().toISOString()],
+      ['catering', 'ケータリング', true, new Date().toISOString()],
+      ['other', 'その他', true, new Date().toISOString()]
+    ];
+    catSheet.getRange(2, 1, defaultCats.length, 4).setValues(defaultCats);
+  }
   
   return createResponse({ 
     success: true, 
@@ -237,7 +239,7 @@ function getShops() {
   
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
-    if (!row[0]) continue; // IDが空の行はスキップ
+    if (!row[0]) continue;
     
     const shop = {};
     headers.forEach((header, index) => {
@@ -256,7 +258,6 @@ function addShop(e) {
   let sheet = ss.getSheetByName('shops');
   
   if (!sheet) {
-    // シートがない場合はセットアップを実行
     setup();
     sheet = ss.getSheetByName('shops');
   }
@@ -320,6 +321,98 @@ function deleteShop(e) {
   }
   
   return createResponse({ success: false, error: '該当するお店が見つかりません' });
+}
+
+// カテゴリ一覧を取得
+function getCategories() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('categories');
+  
+  if (!sheet) {
+    return createResponse({ success: true, categories: [] });
+  }
+  
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    return createResponse({ success: true, categories: [] });
+  }
+  
+  const data = sheet.getRange(1, 1, lastRow, 4).getValues();
+  const headers = data[0];
+  const categories = [];
+  
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (!row[0]) continue;
+    
+    categories.push({
+      id: row[0],
+      name: row[1],
+      isDefault: row[2] === true || row[2] === 'true',
+      createdAt: row[3]
+    });
+  }
+  
+  return createResponse({ success: true, categories: categories });
+}
+
+// カテゴリを追加
+function addCategory(e) {
+  const data = JSON.parse(e.postData.contents);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('categories');
+  
+  if (!sheet) {
+    setup();
+    sheet = ss.getSheetByName('categories');
+  }
+  
+  const newRow = [
+    data.id || 'cat_' + Date.now(),
+    data.name || '',
+    false,
+    new Date().toISOString()
+  ];
+  
+  sheet.appendRow(newRow);
+  
+  return createResponse({ 
+    success: true, 
+    category: { id: newRow[0], name: newRow[1], isDefault: false }
+  });
+}
+
+// カテゴリを削除
+function deleteCategory(e) {
+  const data = JSON.parse(e.postData.contents);
+  const catId = data.id;
+  
+  if (!catId) {
+    return createResponse({ success: false, error: 'IDが指定されていません' });
+  }
+  
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('categories');
+  
+  if (!sheet) {
+    return createResponse({ success: false, error: 'シートが見つかりません' });
+  }
+  
+  const lastRow = sheet.getLastRow();
+  const values = sheet.getRange(1, 1, lastRow, 3).getValues();
+  
+  for (let i = 1; i < values.length; i++) {
+    if (values[i][0].toString() === catId.toString()) {
+      // デフォルトカテゴリは削除不可
+      if (values[i][2] === true || values[i][2] === 'true') {
+        return createResponse({ success: false, error: 'デフォルトカテゴリは削除できません' });
+      }
+      sheet.deleteRow(i + 1);
+      return createResponse({ success: true, message: 'カテゴリを削除しました' });
+    }
+  }
+  
+  return createResponse({ success: false, error: '該当するカテゴリが見つかりません' });
 }
 
 // JSONレスポンスを作成
