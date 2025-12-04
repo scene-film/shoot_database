@@ -139,8 +139,12 @@ async function loadShops() {
 // フィルター適用
 function applyFilters() {
     filteredShops = shops.filter(shop => {
-        if (currentFilters.category !== 'all' && shop.category !== currentFilters.category) {
-            return false;
+        // カテゴリフィルター（複数カテゴリ対応）
+        if (currentFilters.category !== 'all') {
+            const shopCategories = shop.category ? shop.category.split(',').map(c => c.trim()) : [];
+            if (!shopCategories.includes(currentFilters.category)) {
+                return false;
+            }
         }
         if (currentFilters.area !== 'all' && shop.area !== currentFilters.area) {
             return false;
@@ -217,12 +221,22 @@ async function fetchOGPData() {
 async function handleFormSubmit(e) {
     e.preventDefault();
     
+    // 選択されたカテゴリを取得
+    const selectedCategories = [];
+    const checkboxes = ui.elements.shopCategoryCheckboxes.querySelectorAll('input[type="checkbox"]:checked');
+    checkboxes.forEach(cb => selectedCategories.push(cb.value));
+    
+    if (selectedCategories.length === 0) {
+        ui.showToast('カテゴリを1つ以上選択してください', 'error');
+        return;
+    }
+    
     ui.setSubmitButtonLoading(true);
     
     const shopData = {
         url: ui.elements.shopUrl.value.trim(),
         name: ui.elements.shopName.value.trim(),
-        category: ui.elements.shopCategory.value,
+        category: selectedCategories.join(','),  // カンマ区切りで保存
         area: ui.elements.shopArea.value.trim(),
         price: ui.elements.shopPrice.value,
         image: ui.elements.shopImage.value.trim(),
