@@ -114,7 +114,7 @@ function initEventListeners() {
 
 // セットアップ状態を確認
 function checkSetupStatus() {
-    const isSetup = config.isSetupComplete();
+    const isSetup = config.isReady();
     ui.showSetupNotice(!isSetup);
 }
 
