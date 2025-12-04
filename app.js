@@ -13,6 +13,11 @@ let currentFilters = {
 
 document.addEventListener('DOMContentLoaded', () => {
     ui.init();
+    
+    // カテゴリUIを初期化
+    ui.updateFilterCategoryChips();
+    ui.updateFormCategoryCheckboxes();
+    
     initEventListeners();
     checkSetupStatus();
     loadShops();
@@ -40,6 +45,23 @@ function initEventListeners() {
     ui.elements.runSetup.addEventListener('click', runSetup);
     ui.elements.copyGasCode.addEventListener('click', copyGASCode);
     ui.elements.resetSettings.addEventListener('click', resetSettings);
+    
+    // カテゴリ管理
+    ui.elements.addCategoryBtn.addEventListener('click', addCategory);
+    ui.elements.newCategoryName.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addCategory();
+        }
+    });
+    ui.elements.categoryList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-btn')) {
+            const item = e.target.closest('.category-item');
+            if (item) {
+                deleteCategory(item.dataset.id);
+            }
+        }
+    });
     
     // セットアップ通知
     if (ui.elements.setupNoticeBtn) {
@@ -350,7 +372,52 @@ function resetSettings() {
         ui.elements.gasUrl.value = '';
         ui.updateConnectionStatus('demo', '未設定（デモモード）');
         ui.showSetupNotice(true);
+        ui.renderCategoryList();
+        ui.updateFilterCategoryChips();
+        ui.updateFormCategoryCheckboxes();
         ui.showToast('設定をリセットしました');
         loadShops();
+    }
+}
+
+// カテゴリを追加
+function addCategory() {
+    const name = ui.elements.newCategoryName.value.trim();
+    
+    if (!name) {
+        ui.showToast('カテゴリ名を入力してください', 'error');
+        return;
+    }
+    
+    // IDを生成（日本語対応のため、タイムスタンプベース）
+    const id = 'cat_' + Date.now();
+    
+    config.addCategory(id, name);
+    ui.elements.newCategoryName.value = '';
+    
+    // 各UIを更新
+    ui.renderCategoryList();
+    ui.updateFilterCategoryChips();
+    ui.updateFormCategoryCheckboxes();
+    
+    ui.showToast(`カテゴリ「${name}」を追加しました`);
+}
+
+// カテゴリを削除
+function deleteCategory(id) {
+    const categories = config.getAllCategoriesWithoutAll();
+    const name = categories[id];
+    
+    if (!confirm(`カテゴリ「${name}」を削除しますか？`)) {
+        return;
+    }
+    
+    if (config.removeCategory(id)) {
+        ui.renderCategoryList();
+        ui.updateFilterCategoryChips();
+        ui.updateFormCategoryCheckboxes();
+        ui.showToast(`カテゴリ「${name}」を削除しました`);
+    } else {
+        ui.showToast('デフォルトカテゴリは削除できません', 'error');
     }
 }
