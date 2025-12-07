@@ -49,6 +49,9 @@ class LokeNaviUI {
             bentoEditAreaCheckboxes: document.getElementById('bentoEditAreaCheckboxes'),
             bentoEditPrice: document.getElementById('bentoEditPrice'),
             bentoEditImage: document.getElementById('bentoEditImage'),
+            bentoEditFetchImage: document.getElementById('bentoEditFetchImage'),
+            bentoEditFetchStatus: document.getElementById('bentoEditFetchStatus'),
+            bentoEditImagePreview: document.getElementById('bentoEditImagePreview'),
             bentoEditDescription: document.getElementById('bentoEditDescription'),
             cancelBentoEdit: document.getElementById('cancelBentoEdit'),
             saveBentoEdit: document.getElementById('saveBentoEdit'),
@@ -86,6 +89,9 @@ class LokeNaviUI {
             locationEditAreaCheckboxes: document.getElementById('locationEditAreaCheckboxes'),
             locationEditAddress: document.getElementById('locationEditAddress'),
             locationEditImage: document.getElementById('locationEditImage'),
+            locationEditFetchImage: document.getElementById('locationEditFetchImage'),
+            locationEditFetchStatus: document.getElementById('locationEditFetchStatus'),
+            locationEditImagePreview: document.getElementById('locationEditImagePreview'),
             locationEditDescription: document.getElementById('locationEditDescription'),
             cancelLocationEdit: document.getElementById('cancelLocationEdit'),
             saveLocationEdit: document.getElementById('saveLocationEdit'),
@@ -239,6 +245,8 @@ class LokeNaviUI {
             `<label class="checkbox-label"><input type="checkbox" name="editArea" value="${id}" ${selAreas.includes(id)?'checked':''}><span>${this.esc(name)}</span></label>`
         ).join('');
         
+        this.updateImagePreview('bentoEdit', shop.image || '');
+        this.updateFetchStatus('bentoEdit', '', '');
         this.openModal(this.elements.bentoEditOverlay);
     }
 
@@ -261,6 +269,9 @@ class LokeNaviUI {
         this.elements.locationEditAreaCheckboxes.innerHTML = Object.entries(areas).map(([id, name]) => 
             `<label class="checkbox-label"><input type="checkbox" name="editArea" value="${id}" ${selAreas.includes(id)?'checked':''}><span>${this.esc(name)}</span></label>`
         ).join('');
+        
+        this.updateImagePreview('locationEdit', loc.image || '');
+        this.updateFetchStatus('locationEdit', '', '');
         
         this.openModal(this.elements.locationEditOverlay);
     }
@@ -300,7 +311,13 @@ class LokeNaviUI {
     }
 
     updateImagePreview(type, imageUrl) {
-        const previewEl = type === 'bento' ? this.elements.bentoImagePreview : this.elements.locationImagePreview;
+        const previewMap = {
+            'bento': this.elements.bentoImagePreview,
+            'location': this.elements.locationImagePreview,
+            'bentoEdit': this.elements.bentoEditImagePreview,
+            'locationEdit': this.elements.locationEditImagePreview
+        };
+        const previewEl = previewMap[type];
         if (!previewEl) return;
         
         if (imageUrl) {
@@ -311,7 +328,13 @@ class LokeNaviUI {
     }
 
     updateFetchStatus(type, status, message) {
-        const statusEl = type === 'bento' ? this.elements.bentoFetchStatus : this.elements.locationFetchStatus;
+        const statusMap = {
+            'bento': this.elements.bentoFetchStatus,
+            'location': this.elements.locationFetchStatus,
+            'bentoEdit': this.elements.bentoEditFetchStatus,
+            'locationEdit': this.elements.locationEditFetchStatus
+        };
+        const statusEl = statusMap[type];
         if (!statusEl) return;
         
         statusEl.className = 'fetch-status ' + status;
