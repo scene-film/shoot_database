@@ -121,12 +121,16 @@ function initEventListeners() {
     ui.elements.cancelBentoEdit.addEventListener('click', () => ui.closeModal(ui.elements.bentoEditOverlay));
     ui.elements.bentoEditOverlay.addEventListener('click', e => { if (e.target === ui.elements.bentoEditOverlay) ui.closeModal(ui.elements.bentoEditOverlay); });
     ui.elements.bentoEditForm.addEventListener('submit', handleBentoEditSubmit);
+    ui.elements.bentoEditImage.addEventListener('input', e => ui.updateImagePreview('bentoEdit', e.target.value));
+    ui.elements.bentoEditFetchImage.addEventListener('click', () => fetchImageFromUrl('bentoEdit'));
     
     // ロケ地編集
     ui.elements.closeLocationEdit.addEventListener('click', () => ui.closeModal(ui.elements.locationEditOverlay));
     ui.elements.cancelLocationEdit.addEventListener('click', () => ui.closeModal(ui.elements.locationEditOverlay));
     ui.elements.locationEditOverlay.addEventListener('click', e => { if (e.target === ui.elements.locationEditOverlay) ui.closeModal(ui.elements.locationEditOverlay); });
     ui.elements.locationEditForm.addEventListener('submit', handleLocationEditSubmit);
+    ui.elements.locationEditImage.addEventListener('input', e => ui.updateImagePreview('locationEdit', e.target.value));
+    ui.elements.locationEditFetchImage.addEventListener('click', () => fetchImageFromUrl('locationEdit'));
     
     // グリッドの編集・削除
     ui.elements.bentoGrid.addEventListener('click', handleGridClick);
@@ -230,6 +234,39 @@ async function autoFetchOgp(type, url) {
         }
     } catch (e) {
         ui.updateFetchStatus(type, 'error', '取得に失敗しました');
+    }
+}
+
+async function fetchImageFromUrl(type) {
+    const urlEl = type === 'bentoEdit' ? ui.elements.bentoEditUrl : ui.elements.locationEditUrl;
+    const imageEl = type === 'bentoEdit' ? ui.elements.bentoEditImage : ui.elements.locationEditImage;
+    const btn = type === 'bentoEdit' ? ui.elements.bentoEditFetchImage : ui.elements.locationEditFetchImage;
+    
+    const url = urlEl.value.trim();
+    if (!url || !url.startsWith('http')) {
+        ui.showToast('URLを入力してください', 'error');
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.textContent = '取得中...';
+    ui.updateFetchStatus(type, 'loading', '画像を取得中...');
+    
+    try {
+        const ogp = await api.fetchOgp(url);
+        
+        if (ogp.image) {
+            imageEl.value = ogp.image;
+            ui.updateImagePreview(type, ogp.image);
+            ui.updateFetchStatus(type, 'success', '✓ 画像を取得しました');
+        } else {
+            ui.updateFetchStatus(type, 'error', '画像を取得できませんでした');
+        }
+    } catch (e) {
+        ui.updateFetchStatus(type, 'error', '取得に失敗しました');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'URLから画像取得';
     }
 }
 
