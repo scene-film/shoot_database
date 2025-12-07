@@ -153,8 +153,38 @@ function initEventListeners() {
         if (e.key === 'Escape') {
             ui.closeShopModal();
             ui.closeSettingsModal();
+            ui.closeEditModal();
         }
     });
+    
+    // 店舗グリッドの編集・削除ボタン
+    ui.elements.shopsGrid.addEventListener('click', (e) => {
+        // 編集ボタン
+        if (e.target.classList.contains('shop-edit-btn')) {
+            e.stopPropagation();
+            const shopId = e.target.dataset.id;
+            const shop = shops.find(s => s.id.toString() === shopId.toString());
+            if (shop) {
+                ui.openEditModal(shop);
+            }
+        }
+        // 削除ボタン
+        if (e.target.classList.contains('shop-delete-btn')) {
+            e.stopPropagation();
+            const shopId = e.target.dataset.id;
+            deleteShop(shopId);
+        }
+    });
+    
+    // 編集モーダル
+    ui.elements.closeEditModal.addEventListener('click', () => ui.closeEditModal());
+    ui.elements.cancelEdit.addEventListener('click', () => ui.closeEditModal());
+    ui.elements.editOverlay.addEventListener('click', (e) => {
+        if (e.target === ui.elements.editOverlay) {
+            ui.closeEditModal();
+        }
+    });
+    ui.elements.editForm.addEventListener('submit', handleEditSubmit);
 }
 
 // セットアップ状態を確認
@@ -545,5 +575,73 @@ async function deleteArea(id) {
         ui.showToast(`エリア「${name}」を削除しました`);
     } catch (error) {
         ui.showToast(error.message, 'error');
+    }
+}
+
+// 店舗を削除
+async function deleteShop(shopId) {
+    const shop = shops.find(s => s.id.toString() === shopId.toString());
+    const name = shop ? shop.name : '店舗';
+    
+    if (!confirm(`「${name}」を削除しますか？`)) {
+        return;
+    }
+    
+    try {
+        await api.deleteShop(shopId);
+        ui.showToast(`「${name}」を削除しました`);
+        await loadShops();
+    } catch (error) {
+        ui.showToast(error.message, 'error');
+    }
+}
+
+// 編集フォーム送信
+async function handleEditSubmit(e) {
+    e.preventDefault();
+    
+    // 選択されたカテゴリを取得
+    const selectedCategories = [];
+    const catCheckboxes = ui.elements.editCategoryCheckboxes.querySelectorAll('input[type="checkbox"]:checked');
+    catCheckboxes.forEach(cb => selectedCategories.push(cb.value));
+    
+    if (selectedCategories.length === 0) {
+        ui.showToast('カテゴリを1つ以上選択してください', 'error');
+        return;
+    }
+    
+    // 選択されたエリアを取得
+    const selectedAreas = [];
+    const areaCheckboxes = ui.elements.editAreaCheckboxes.querySelectorAll('input[type="checkbox"]:checked');
+    areaCheckboxes.forEach(cb => selectedAreas.push(cb.value));
+    
+    if (selectedAreas.length === 0) {
+        ui.showToast('配達エリアを1つ以上選択してください', 'error');
+        return;
+    }
+    
+    ui.setEditButtonLoading(true);
+    
+    const shopData = {
+        id: ui.elements.editShopId.value,
+        url: ui.elements.editShopUrl.value.trim(),
+        name: ui.elements.editShopName.value.trim(),
+        category: selectedCategories.join(','),
+        area: selectedAreas.join(','),
+        price: ui.elements.editShopPrice.value,
+        image: ui.elements.editShopImage.value.trim(),
+        description: ui.elements.editShopDescription.value.trim()
+    };
+    
+    try {
+        await api.updateShop(shopData);
+        ui.showToast('更新しました');
+        ui.closeEditModal();
+        await loadShops();
+    } catch (error) {
+        console.error('Update error:', error);
+        ui.showToast(error.message || '更新に失敗しました', 'error');
+    } finally {
+        ui.setEditButtonLoading(false);
     }
 }
