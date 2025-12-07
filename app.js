@@ -64,8 +64,13 @@ function adjustContentMargin() {
     const setupNotice = document.getElementById('setupNotice');
     
     if (header && shopsSection) {
+        // セットアップ通知の表示状態でヘッダー位置を調整
+        const noticeVisible = setupNotice && setupNotice.style.display !== 'none';
+        const noticeHeight = noticeVisible ? setupNotice.offsetHeight : 0;
+        
+        header.style.top = noticeHeight + 'px';
+        
         const headerHeight = header.offsetHeight;
-        const noticeHeight = setupNotice && setupNotice.style.display !== 'none' ? setupNotice.offsetHeight : 0;
         shopsSection.style.marginTop = (headerHeight + noticeHeight) + 'px';
     }
 }
