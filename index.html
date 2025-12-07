@@ -43,7 +43,7 @@
                     <div class="filter-group">
                         <label class="filter-label">配達エリア</label>
                         <select class="filter-select" id="areaFilter">
-                            <option value="all">すべてのエリア</option>
+                            <!-- 動的に生成される -->
                         </select>
                     </div>
                     <div class="filter-group">
@@ -124,7 +124,9 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">配達エリア <span class="required">*</span></label>
-                        <input type="text" class="form-input" id="shopArea" placeholder="例: 渋谷区、新宿区" required>
+                        <div class="category-checkboxes" id="shopAreaCheckboxes">
+                            <!-- 動的に生成される -->
+                        </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">価格帯 <span class="required">*</span></label>
@@ -208,6 +210,18 @@
                     </div>
                     <div class="category-list" id="categoryList">
                         <!-- カテゴリ一覧がここに表示される -->
+                    </div>
+                </div>
+
+                <!-- エリア管理 -->
+                <div class="settings-section">
+                    <h3>配達エリア管理</h3>
+                    <div class="category-add-form">
+                        <input type="text" class="form-input" id="newAreaName" placeholder="エリア名（例: 茨城）">
+                        <button type="button" class="btn-secondary" id="addAreaBtn">追加</button>
+                    </div>
+                    <div class="category-list" id="areaList">
+                        <!-- エリア一覧がここに表示される -->
                     </div>
                 </div>
             </div>
