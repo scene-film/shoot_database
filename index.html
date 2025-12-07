@@ -35,13 +35,10 @@
                 <button class="btn-add" id="openModal">お店を登録</button>
             </nav>
         </div>
-    </header>
-
-    <!-- フィルターセクション -->
-    <section class="filters" id="shops">
-        <div class="container">
-            <div class="filter-bar">
-                <div class="filter-group">
+        <!-- フィルター（ヘッダー内） -->
+        <div class="header-filters" id="shops">
+            <div class="header-filters-inner">
+                <div class="filter-group filter-category">
                     <label class="filter-label">カテゴリ</label>
                     <div class="category-chips" id="categoryChips">
                         <!-- 動的に生成される -->
@@ -49,7 +46,7 @@
                 </div>
                 <div class="filter-row">
                     <div class="filter-group">
-                        <label class="filter-label">配達エリア</label>
+                        <label class="filter-label">エリア</label>
                         <select class="filter-select" id="areaFilter">
                             <!-- 動的に生成される -->
                         </select>
@@ -65,13 +62,13 @@
                         </select>
                     </div>
                     <div class="filter-group search-group">
-                        <label class="filter-label">キーワード</label>
+                        <label class="filter-label">検索</label>
                         <input type="text" class="filter-input" id="searchInput" placeholder="店名で検索...">
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </header>
 
     <!-- 店舗一覧 -->
     <section class="shops-section">
