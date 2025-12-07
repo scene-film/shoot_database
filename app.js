@@ -14,6 +14,10 @@ let currentFilters = {
 document.addEventListener('DOMContentLoaded', async () => {
     ui.init();
     
+    // ヘッダーの高さに応じてコンテンツの位置を調整
+    adjustContentMargin();
+    window.addEventListener('resize', adjustContentMargin);
+    
     // カテゴリ・エリアUIを初期化（デフォルトで表示）
     ui.updateFilterCategoryChips();
     ui.updateFormCategoryCheckboxes();
@@ -48,8 +52,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         applyFilters();
     } finally {
         ui.showLoading(false);
+        // データ読み込み後に再調整
+        adjustContentMargin();
     }
 });
+
+// ヘッダーの高さに応じてコンテンツの余白を調整
+function adjustContentMargin() {
+    const header = document.querySelector('.header');
+    const shopsSection = document.querySelector('.shops-section');
+    const setupNotice = document.getElementById('setupNotice');
+    
+    if (header && shopsSection) {
+        const headerHeight = header.offsetHeight;
+        const noticeHeight = setupNotice && setupNotice.style.display !== 'none' ? setupNotice.offsetHeight : 0;
+        shopsSection.style.marginTop = (headerHeight + noticeHeight) + 'px';
+    }
+}
 
 function initEventListeners() {
     // 登録モーダル
