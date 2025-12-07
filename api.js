@@ -167,7 +167,7 @@ class LokeNaviAPI {
         }
     }
 
-    // OGP取得
+    // OGP取得（強化版）
     async fetchOgp(url) {
         try {
             const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
@@ -185,10 +185,49 @@ class LokeNaviAPI {
             
             const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
             
+            // 画像取得（優先順位: og:image > twitter:image > logo > favicon）
+            let image = getMetaContent('og:image') || getMetaContent('twitter:image');
+            
+            if (!image) {
+                // ロゴを探す
+                const logoMatch = html.match(/<img[^>]*class=["'][^"']*logo[^"']*["'][^>]*src=["']([^"']+)["']/i)
+                    || html.match(/<img[^>]*src=["']([^"']+)["'][^>]*class=["'][^"']*logo/i)
+                    || html.match(/<link[^>]*rel=["']icon["'][^>]*href=["']([^"']+)["']/i)
+                    || html.match(/<link[^>]*rel=["']shortcut icon["'][^>]*href=["']([^"']+)["']/i)
+                    || html.match(/<link[^>]*rel=["']apple-touch-icon["'][^>]*href=["']([^"']+)["']/i);
+                
+                if (logoMatch) {
+                    image = logoMatch[1];
+                    // 相対パスを絶対パスに変換
+                    if (image && !image.startsWith('http')) {
+                        const urlObj = new URL(url);
+                        if (image.startsWith('//')) {
+                            image = urlObj.protocol + image;
+                        } else if (image.startsWith('/')) {
+                            image = urlObj.origin + image;
+                        } else {
+                            image = urlObj.origin + '/' + image;
+                        }
+                    }
+                }
+            }
+            
+            // 相対パスを絶対パスに変換（og:imageなどの場合）
+            if (image && !image.startsWith('http')) {
+                const urlObj = new URL(url);
+                if (image.startsWith('//')) {
+                    image = urlObj.protocol + image;
+                } else if (image.startsWith('/')) {
+                    image = urlObj.origin + image;
+                } else {
+                    image = urlObj.origin + '/' + image;
+                }
+            }
+            
             return {
-                title: getMetaContent('og:title') || (titleMatch ? titleMatch[1] : ''),
+                title: getMetaContent('og:title') || (titleMatch ? titleMatch[1].trim() : ''),
                 description: getMetaContent('og:description') || getMetaContent('description') || '',
-                image: getMetaContent('og:image') || ''
+                image: image || ''
             };
         } catch (e) {
             console.error('OGP fetch error:', e);
