@@ -300,7 +300,17 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">画像URL</label>
-                        <input type="url" class="form-input" id="bentoEditImage">
+                        <div class="image-input-wrapper">
+                            <input type="url" class="form-input" id="bentoEditImage">
+                            <button type="button" class="btn-fetch-image" id="bentoEditFetchImage">URLから画像取得</button>
+                        </div>
+                        <div class="fetch-status" id="bentoEditFetchStatus"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">画像プレビュー</label>
+                        <div class="image-preview" id="bentoEditImagePreview">
+                            <span class="preview-placeholder">画像URLを入力するとプレビュー表示</span>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">説明</label>
@@ -347,7 +357,17 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">画像URL</label>
-                        <input type="url" class="form-input" id="locationEditImage">
+                        <div class="image-input-wrapper">
+                            <input type="url" class="form-input" id="locationEditImage">
+                            <button type="button" class="btn-fetch-image" id="locationEditFetchImage">URLから画像取得</button>
+                        </div>
+                        <div class="fetch-status" id="locationEditFetchStatus"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">画像プレビュー</label>
+                        <div class="image-preview" id="locationEditImagePreview">
+                            <span class="preview-placeholder">画像URLを入力するとプレビュー表示</span>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">説明</label>
