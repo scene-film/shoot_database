@@ -278,11 +278,6 @@ body {
    =========================== */
 .shops-section {
     padding: 24px 0 60px;
-    margin-top: 150px; /* ヘッダー + フィルター分 */
-}
-
-.setup-notice:not([style*="display: none"]) ~ .header + .shops-section {
-    margin-top: 190px; /* セットアップ通知表示時 */
 }
 
 .shops-header {
