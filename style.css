@@ -652,6 +652,36 @@ body {
     font-size: 12px;
 }
 
+.image-input-wrapper {
+    display: flex;
+    gap: 8px;
+}
+
+.image-input-wrapper .form-input {
+    flex: 1;
+}
+
+.btn-fetch-image {
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: var(--transition);
+}
+
+.btn-fetch-image:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.btn-fetch-image:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .category-checkboxes {
     display: flex;
     flex-wrap: wrap;
