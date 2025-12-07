@@ -611,6 +611,47 @@ body {
     border-color: var(--color-text-light);
 }
 
+.fetch-status {
+    font-size: 12px;
+    margin-top: 6px;
+    min-height: 18px;
+}
+
+.fetch-status.loading {
+    color: var(--color-primary);
+}
+
+.fetch-status.success {
+    color: #10b981;
+}
+
+.fetch-status.error {
+    color: #ef4444;
+}
+
+.image-preview {
+    width: 100%;
+    height: 120px;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: var(--color-border-light);
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.preview-placeholder {
+    color: var(--color-text-muted);
+    font-size: 12px;
+}
+
 .category-checkboxes {
     display: flex;
     flex-wrap: wrap;
