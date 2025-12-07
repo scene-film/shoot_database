@@ -308,10 +308,65 @@ body {
     overflow: hidden;
     transition: var(--transition);
     cursor: pointer;
+    position: relative;
 }
 
 .shop-card:hover {
     box-shadow: var(--shadow-md);
+}
+
+.shop-card-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 4px;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.shop-card:hover .shop-card-actions {
+    opacity: 1;
+}
+
+.shop-edit-btn,
+.shop-delete-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.shop-edit-btn {
+    background: #fff;
+    color: #666;
+}
+
+.shop-edit-btn:hover {
+    background: var(--color-primary);
+    color: #fff;
+}
+
+.shop-delete-btn {
+    background: #fff;
+    color: #666;
+}
+
+.shop-delete-btn:hover {
+    background: #dc2626;
+    color: #fff;
+}
+
+.shop-card-content {
+    cursor: pointer;
 }
 
 .shop-image {
