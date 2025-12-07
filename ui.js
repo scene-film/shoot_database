@@ -1,428 +1,317 @@
 // ===========================
-// ui.js - UI操作処理
+// ui.js - UI管理
 // ===========================
 
-class UI {
+class LokeNaviUI {
     constructor() {
         this.elements = {};
     }
 
     init() {
         this.elements = {
-            shopsGrid: document.getElementById('shopsGrid'),
-            shopCount: document.getElementById('shopCount'),
-            noResults: document.getElementById('noResults'),
-            loading: document.getElementById('loading'),
+            sidebarBtns: document.querySelectorAll('.sidebar-btn'),
+            pages: document.querySelectorAll('.page'),
+            setupNotice: document.getElementById('setupNotice'),
+            setupNoticeBtn: document.getElementById('setupNoticeBtn'),
+            toast: document.getElementById('toast'),
             
-            categoryChips: document.getElementById('categoryChips'),
-            areaFilter: document.getElementById('areaFilter'),
-            priceFilter: document.getElementById('priceFilter'),
-            searchInput: document.getElementById('searchInput'),
+            // 弁当
+            bentoPage: document.getElementById('bentoPage'),
+            bentoCategoryChips: document.getElementById('bentoCategoryChips'),
+            bentoAreaFilter: document.getElementById('bentoAreaFilter'),
+            bentoPriceFilter: document.getElementById('bentoPriceFilter'),
+            bentoSearchInput: document.getElementById('bentoSearchInput'),
+            bentoGrid: document.getElementById('bentoGrid'),
+            bentoCount: document.getElementById('bentoCount'),
+            bentoNoResults: document.getElementById('bentoNoResults'),
+            bentoLoading: document.getElementById('bentoLoading'),
+            openBentoModal: document.getElementById('openBentoModal'),
+            bentoModalOverlay: document.getElementById('bentoModalOverlay'),
+            closeBentoModal: document.getElementById('closeBentoModal'),
+            bentoForm: document.getElementById('bentoForm'),
+            bentoUrl: document.getElementById('bentoUrl'),
+            bentoFetchOgp: document.getElementById('bentoFetchOgp'),
+            bentoName: document.getElementById('bentoName'),
+            bentoImage: document.getElementById('bentoImage'),
+            bentoCategoryCheckboxes: document.getElementById('bentoCategoryCheckboxes'),
+            bentoAreaCheckboxes: document.getElementById('bentoAreaCheckboxes'),
+            bentoPrice: document.getElementById('bentoPrice'),
+            bentoDescription: document.getElementById('bentoDescription'),
+            bentoSubmit: document.getElementById('bentoSubmit'),
+            bentoEditOverlay: document.getElementById('bentoEditOverlay'),
+            closeBentoEdit: document.getElementById('closeBentoEdit'),
+            bentoEditForm: document.getElementById('bentoEditForm'),
+            bentoEditId: document.getElementById('bentoEditId'),
+            bentoEditUrl: document.getElementById('bentoEditUrl'),
+            bentoEditName: document.getElementById('bentoEditName'),
+            bentoEditCategoryCheckboxes: document.getElementById('bentoEditCategoryCheckboxes'),
+            bentoEditAreaCheckboxes: document.getElementById('bentoEditAreaCheckboxes'),
+            bentoEditPrice: document.getElementById('bentoEditPrice'),
+            bentoEditImage: document.getElementById('bentoEditImage'),
+            bentoEditDescription: document.getElementById('bentoEditDescription'),
+            cancelBentoEdit: document.getElementById('cancelBentoEdit'),
+            saveBentoEdit: document.getElementById('saveBentoEdit'),
             
-            modalOverlay: document.getElementById('modalOverlay'),
-            openModal: document.getElementById('openModal'),
-            closeModal: document.getElementById('closeModal'),
-            cancelBtn: document.getElementById('cancelBtn'),
-            shopForm: document.getElementById('shopForm'),
+            // ロケ地
+            locationPage: document.getElementById('locationPage'),
+            locationCategoryChips: document.getElementById('locationCategoryChips'),
+            locationAreaFilter: document.getElementById('locationAreaFilter'),
+            locationSearchInput: document.getElementById('locationSearchInput'),
+            locationGrid: document.getElementById('locationGrid'),
+            locationCount: document.getElementById('locationCount'),
+            locationNoResults: document.getElementById('locationNoResults'),
+            locationLoading: document.getElementById('locationLoading'),
+            openLocationModal: document.getElementById('openLocationModal'),
+            locationModalOverlay: document.getElementById('locationModalOverlay'),
+            closeLocationModal: document.getElementById('closeLocationModal'),
+            locationForm: document.getElementById('locationForm'),
+            locationUrl: document.getElementById('locationUrl'),
+            locationFetchOgp: document.getElementById('locationFetchOgp'),
+            locationName: document.getElementById('locationName'),
+            locationImage: document.getElementById('locationImage'),
+            locationCategoryCheckboxes: document.getElementById('locationCategoryCheckboxes'),
+            locationAreaCheckboxes: document.getElementById('locationAreaCheckboxes'),
+            locationAddress: document.getElementById('locationAddress'),
+            locationDescription: document.getElementById('locationDescription'),
+            locationSubmit: document.getElementById('locationSubmit'),
+            locationEditOverlay: document.getElementById('locationEditOverlay'),
+            closeLocationEdit: document.getElementById('closeLocationEdit'),
+            locationEditForm: document.getElementById('locationEditForm'),
+            locationEditId: document.getElementById('locationEditId'),
+            locationEditUrl: document.getElementById('locationEditUrl'),
+            locationEditName: document.getElementById('locationEditName'),
+            locationEditCategoryCheckboxes: document.getElementById('locationEditCategoryCheckboxes'),
+            locationEditAreaCheckboxes: document.getElementById('locationEditAreaCheckboxes'),
+            locationEditAddress: document.getElementById('locationEditAddress'),
+            locationEditImage: document.getElementById('locationEditImage'),
+            locationEditDescription: document.getElementById('locationEditDescription'),
+            cancelLocationEdit: document.getElementById('cancelLocationEdit'),
+            saveLocationEdit: document.getElementById('saveLocationEdit'),
             
-            shopUrl: document.getElementById('shopUrl'),
-            fetchBtn: document.getElementById('fetchBtn'),
-            previewCard: document.getElementById('previewCard'),
-            previewImage: document.getElementById('previewImage'),
-            previewTitle: document.getElementById('previewTitle'),
-            previewUrl: document.getElementById('previewUrl'),
-            shopName: document.getElementById('shopName'),
-            shopCategoryCheckboxes: document.getElementById('shopCategoryCheckboxes'),
-            shopArea: document.getElementById('shopArea'),
-            shopPrice: document.getElementById('shopPrice'),
-            shopImage: document.getElementById('shopImage'),
-            shopDescription: document.getElementById('shopDescription'),
-            
-            settingsOverlay: document.getElementById('settingsOverlay'),
+            // 設定
             openSettings: document.getElementById('openSettings'),
+            settingsOverlay: document.getElementById('settingsOverlay'),
             closeSettings: document.getElementById('closeSettings'),
-            cancelSettings: document.getElementById('cancelSettings'),
-            gasUrl: document.getElementById('gasUrl'),
             settingsStatus: document.getElementById('settingsStatus'),
+            gasUrl: document.getElementById('gasUrl'),
             testConnection: document.getElementById('testConnection'),
             runSetup: document.getElementById('runSetup'),
             copyGasCode: document.getElementById('copyGasCode'),
             resetSettings: document.getElementById('resetSettings'),
-            
-            // カテゴリ管理
-            newCategoryName: document.getElementById('newCategoryName'),
-            addCategoryBtn: document.getElementById('addCategoryBtn'),
-            categoryList: document.getElementById('categoryList'),
-            
-            // エリア管理
-            newAreaName: document.getElementById('newAreaName'),
-            addAreaBtn: document.getElementById('addAreaBtn'),
-            areaList: document.getElementById('areaList'),
-            shopAreaCheckboxes: document.getElementById('shopAreaCheckboxes'),
-            
-            // 編集モーダル
-            editOverlay: document.getElementById('editOverlay'),
-            editModal: document.getElementById('editModal'),
-            closeEditModal: document.getElementById('closeEditModal'),
-            editForm: document.getElementById('editForm'),
-            editShopId: document.getElementById('editShopId'),
-            editShopUrl: document.getElementById('editShopUrl'),
-            editShopName: document.getElementById('editShopName'),
-            editCategoryCheckboxes: document.getElementById('editCategoryCheckboxes'),
-            editAreaCheckboxes: document.getElementById('editAreaCheckboxes'),
-            editShopPrice: document.getElementById('editShopPrice'),
-            editShopImage: document.getElementById('editShopImage'),
-            editShopDescription: document.getElementById('editShopDescription'),
-            cancelEdit: document.getElementById('cancelEdit'),
-            saveEdit: document.getElementById('saveEdit'),
-            
-            setupNotice: document.getElementById('setupNotice'),
-            setupNoticeBtn: document.getElementById('setupNoticeBtn'),
-            
-            toast: document.getElementById('toast'),
-            toastMessage: document.getElementById('toastMessage')
+            newBentoCategoryName: document.getElementById('newBentoCategoryName'),
+            addBentoCategoryBtn: document.getElementById('addBentoCategoryBtn'),
+            bentoCategoryList: document.getElementById('bentoCategoryList'),
+            newBentoAreaName: document.getElementById('newBentoAreaName'),
+            addBentoAreaBtn: document.getElementById('addBentoAreaBtn'),
+            bentoAreaList: document.getElementById('bentoAreaList'),
+            newLocationCategoryName: document.getElementById('newLocationCategoryName'),
+            addLocationCategoryBtn: document.getElementById('addLocationCategoryBtn'),
+            locationCategoryList: document.getElementById('locationCategoryList'),
+            newLocationAreaName: document.getElementById('newLocationAreaName'),
+            addLocationAreaBtn: document.getElementById('addLocationAreaBtn'),
+            locationAreaList: document.getElementById('locationAreaList')
         };
     }
 
-    // セットアップ通知の表示/非表示
-    showSetupNotice(show) {
-        if (this.elements.setupNotice) {
-            this.elements.setupNotice.style.display = show ? 'block' : 'none';
-            // 余白を再調整
-            if (typeof adjustContentMargin === 'function') {
-                setTimeout(adjustContentMargin, 10);
-            }
-        }
+    switchPage(pageName) {
+        this.elements.sidebarBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.page === pageName));
+        this.elements.pages.forEach(page => page.classList.toggle('active', page.id === pageName + 'Page'));
     }
 
-    // カテゴリ一覧を描画
-    renderCategoryList(categories) {
-        if (!categories || categories.length === 0) {
-            this.elements.categoryList.innerHTML = '<p style="color: #888; font-size: 13px;">カテゴリがありません</p>';
-            return;
-        }
-        
-        this.elements.categoryList.innerHTML = categories.map(cat => {
-            const isDefault = cat.isDefault === true || cat.isDefault === 'true';
-            return `
-                <div class="category-item ${isDefault ? 'default' : ''}" data-id="${cat.id}">
-                    <span>${this.escapeHtml(cat.name)}</span>
-                    <button type="button" class="delete-btn" title="削除">&times;</button>
-                </div>
-            `;
-        }).join('');
+    updateBentoCategoryChips() {
+        this.elements.bentoCategoryChips.innerHTML = Object.entries(BENTO_CATEGORIES).map(([id, name]) => 
+            `<button class="chip ${id === 'all' ? 'active' : ''}" data-category="${id}">${this.esc(name)}</button>`
+        ).join('');
     }
 
-    // フィルターのカテゴリチップを更新
-    updateFilterCategoryChips() {
-        const container = this.elements.categoryChips;
-        const currentActive = container.querySelector('.chip.active')?.dataset.category || 'all';
-        
-        container.innerHTML = Object.entries(CATEGORIES).map(([id, name]) => `
-            <button class="chip ${id === currentActive ? 'active' : ''}" data-category="${id}">${name}</button>
-        `).join('');
+    updateBentoAreaSelect() {
+        this.elements.bentoAreaFilter.innerHTML = Object.entries(BENTO_AREAS).map(([id, name]) => 
+            `<option value="${id}">${name}</option>`
+        ).join('');
     }
 
-    // 登録フォームのカテゴリチェックボックスを更新
-    updateFormCategoryCheckboxes() {
-        const container = this.elements.shopCategoryCheckboxes;
-        const categories = config.getAllCategoriesWithoutAll();
-        
-        container.innerHTML = Object.entries(categories).map(([id, name]) => `
-            <label class="checkbox-label">
-                <input type="checkbox" name="category" value="${id}">
-                <span>${this.escapeHtml(name)}</span>
-            </label>
-        `).join('');
+    updateBentoFormCheckboxes() {
+        const cats = config.getBentoCategoriesWithoutAll();
+        const areas = config.getBentoAreasWithoutAll();
+        this.elements.bentoCategoryCheckboxes.innerHTML = Object.entries(cats).map(([id, name]) => 
+            `<label class="checkbox-label"><input type="checkbox" name="category" value="${id}"><span>${this.esc(name)}</span></label>`
+        ).join('');
+        this.elements.bentoAreaCheckboxes.innerHTML = Object.entries(areas).map(([id, name]) => 
+            `<label class="checkbox-label"><input type="checkbox" name="area" value="${id}"><span>${this.esc(name)}</span></label>`
+        ).join('');
     }
 
-    // フィルターのエリアセレクトを更新
-    updateFilterAreaSelect() {
-        const select = this.elements.areaFilter;
-        const currentValue = select.value || 'all';
-        
-        select.innerHTML = Object.entries(AREAS).map(([id, name]) => `
-            <option value="${id}" ${id === currentValue ? 'selected' : ''}>${name}</option>
-        `).join('');
+    updateLocationCategoryChips() {
+        this.elements.locationCategoryChips.innerHTML = Object.entries(LOCATION_CATEGORIES).map(([id, name]) => 
+            `<button class="chip ${id === 'all' ? 'active' : ''}" data-category="${id}">${this.esc(name)}</button>`
+        ).join('');
     }
 
-    // 登録フォームのエリアチェックボックスを更新
-    updateFormAreaCheckboxes() {
-        const container = this.elements.shopAreaCheckboxes;
-        const areas = config.getAllAreasWithoutAll();
-        
-        container.innerHTML = Object.entries(areas).map(([id, name]) => `
-            <label class="checkbox-label">
-                <input type="checkbox" name="area" value="${id}">
-                <span>${this.escapeHtml(name)}</span>
-            </label>
-        `).join('');
+    updateLocationAreaSelect() {
+        this.elements.locationAreaFilter.innerHTML = Object.entries(LOCATION_AREAS).map(([id, name]) => 
+            `<option value="${id}">${name}</option>`
+        ).join('');
     }
 
-    // エリア一覧を描画
-    renderAreaList(areas) {
-        if (!areas || areas.length === 0) {
-            this.elements.areaList.innerHTML = '<p style="color: #888; font-size: 13px;">エリアがありません</p>';
-            return;
-        }
-        
-        this.elements.areaList.innerHTML = areas.map(area => {
-            const isDefault = area.isDefault === true || area.isDefault === 'true';
-            return `
-                <div class="category-item ${isDefault ? 'default' : ''}" data-id="${area.id}" data-type="area">
-                    <span>${this.escapeHtml(area.name)}</span>
-                    <button type="button" class="delete-btn" title="削除">&times;</button>
-                </div>
-            `;
-        }).join('');
+    updateLocationFormCheckboxes() {
+        const cats = config.getLocationCategoriesWithoutAll();
+        const areas = config.getLocationAreasWithoutAll();
+        this.elements.locationCategoryCheckboxes.innerHTML = Object.entries(cats).map(([id, name]) => 
+            `<label class="checkbox-label"><input type="checkbox" name="category" value="${id}"><span>${this.esc(name)}</span></label>`
+        ).join('');
+        this.elements.locationAreaCheckboxes.innerHTML = Object.entries(areas).map(([id, name]) => 
+            `<label class="checkbox-label"><input type="checkbox" name="area" value="${id}"><span>${this.esc(name)}</span></label>`
+        ).join('');
     }
 
-    renderShops(shops) {
-        this.elements.shopCount.textContent = shops.length;
-        
+    renderBentoShops(shops) {
+        this.elements.bentoCount.textContent = shops.length;
         if (shops.length === 0) {
-            this.elements.shopsGrid.innerHTML = '';
-            this.elements.noResults.style.display = 'block';
+            this.elements.bentoGrid.innerHTML = '';
+            this.elements.bentoNoResults.style.display = 'block';
             return;
         }
+        this.elements.bentoNoResults.style.display = 'none';
+        this.elements.bentoGrid.innerHTML = shops.map(s => this._card(s, 'bento', BENTO_CATEGORIES, BENTO_AREAS)).join('');
+    }
+
+    renderLocations(locations) {
+        this.elements.locationCount.textContent = locations.length;
+        if (locations.length === 0) {
+            this.elements.locationGrid.innerHTML = '';
+            this.elements.locationNoResults.style.display = 'block';
+            return;
+        }
+        this.elements.locationNoResults.style.display = 'none';
+        this.elements.locationGrid.innerHTML = locations.map(l => this._card(l, 'location', LOCATION_CATEGORIES, LOCATION_AREAS)).join('');
+    }
+
+    _card(item, type, catMap, areaMap) {
+        const cats = item.category ? item.category.split(',').map(c => c.trim()) : [];
+        const catLabels = cats.map(c => catMap[c] || c).join(', ');
+        const areas = item.area ? item.area.split(',').map(a => a.trim()) : [];
+        const areaLabels = areas.map(a => areaMap[a] || a).join(', ');
+        const meta2 = type === 'bento' ? (PRICE_RANGES[item.price] || item.price) : (item.address || '');
+        const ph = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 200'%3E%3Crect fill='%23f0f0f0' width='400' height='200'/%3E%3Ctext x='200' y='100' text-anchor='middle' fill='%23999'%3ENo Image%3C/text%3E%3C/svg%3E";
         
-        this.elements.noResults.style.display = 'none';
-        
-        // DocumentFragmentで一括DOM操作
-        const fragment = document.createDocumentFragment();
-        const template = document.createElement('template');
-        
-        const html = shops.map(shop => {
-            const categories = shop.category ? shop.category.split(',').map(c => c.trim()) : [];
-            const categoryLabels = categories.map(c => CATEGORIES[c] || c).join(', ');
-            const areas = shop.area ? shop.area.split(',').map(a => a.trim()) : [];
-            const areaLabels = areas.map(a => AREAS[a] || a).join(', ');
-            
-            return `
-            <article class="shop-card" data-id="${shop.id}">
-                <div class="shop-card-actions">
-                    <button class="shop-edit-btn" data-id="${shop.id}" title="編集">✎</button>
-                    <button class="shop-delete-btn" data-id="${shop.id}" title="削除">×</button>
-                </div>
-                <div class="shop-card-content" onclick="window.open('${this.escapeHtml(shop.url)}', '_blank')">
-                    <img 
-                        src="${this.escapeHtml(shop.image) || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22400%22 height=%22200%22/%3E%3Ctext x=%22200%22 y=%22100%22 text-anchor=%22middle%22 fill=%22%23999%22%3ENo Image%3C/text%3E%3C/svg%3E'}" 
-                        alt="${this.escapeHtml(shop.name)}" 
-                        class="shop-image"
-                        loading="lazy"
-                        decoding="async"
-                        onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22400%22 height=%22200%22/%3E%3Ctext x=%22200%22 y=%22100%22 text-anchor=%22middle%22 fill=%22%23999%22%3ENo Image%3C/text%3E%3C/svg%3E'"
-                    >
-                    <div class="shop-content">
-                        <span class="shop-category">${categoryLabels || 'その他'}</span>
-                        <h3 class="shop-name">${this.escapeHtml(shop.name)}</h3>
-                        ${shop.description ? `<p class="shop-description">${this.escapeHtml(shop.description)}</p>` : ''}
-                        <div class="shop-meta">
-                            <span class="shop-meta-item">${areaLabels || '未設定'}</span>
-                            <span class="shop-meta-item">${PRICE_RANGES[shop.price] || shop.price}</span>
-                        </div>
+        return `<article class="item-card" data-id="${item.id}" data-type="${type}">
+            <div class="item-card-actions">
+                <button class="item-edit-btn" data-id="${item.id}" data-type="${type}" title="編集">✎</button>
+                <button class="item-delete-btn" data-id="${item.id}" data-type="${type}" title="削除">×</button>
+            </div>
+            <div class="item-card-content" ${item.url ? `onclick="window.open('${this.esc(item.url)}','_blank')"` : ''}>
+                <img src="${this.esc(item.image) || ph}" alt="${this.esc(item.name)}" class="item-image" loading="lazy" onerror="this.src='${ph}'">
+                <div class="item-content">
+                    <span class="item-category">${catLabels || 'その他'}</span>
+                    <h3 class="item-name">${this.esc(item.name)}</h3>
+                    ${item.description ? `<p class="item-description">${this.esc(item.description)}</p>` : ''}
+                    <div class="item-meta">
+                        <span class="item-meta-item">${areaLabels || '未設定'}</span>
+                        ${meta2 ? `<span class="item-meta-item">${this.esc(meta2)}</span>` : ''}
                     </div>
                 </div>
-            </article>
-        `}).join('');
-        
-        this.elements.shopsGrid.innerHTML = html;
+            </div>
+        </article>`;
     }
 
-    showLoading(show) {
-        this.elements.loading.style.display = show ? 'block' : 'none';
-        if (show) {
-            this.elements.shopsGrid.innerHTML = '';
-            this.elements.noResults.style.display = 'none';
-        }
+    openModal(el) { el.classList.add('active'); document.body.style.overflow = 'hidden'; }
+    closeModal(el) { el.classList.remove('active'); document.body.style.overflow = ''; }
+
+    openBentoEditModal(shop) {
+        this.elements.bentoEditId.value = shop.id;
+        this.elements.bentoEditUrl.value = shop.url || '';
+        this.elements.bentoEditName.value = shop.name || '';
+        this.elements.bentoEditPrice.value = shop.price || '';
+        this.elements.bentoEditImage.value = shop.image || '';
+        this.elements.bentoEditDescription.value = shop.description || '';
+        
+        const cats = config.getBentoCategoriesWithoutAll();
+        const selCats = shop.category ? shop.category.split(',').map(c => c.trim()) : [];
+        this.elements.bentoEditCategoryCheckboxes.innerHTML = Object.entries(cats).map(([id, name]) => 
+            `<label class="checkbox-label"><input type="checkbox" name="editCategory" value="${id}" ${selCats.includes(id)?'checked':''}><span>${this.esc(name)}</span></label>`
+        ).join('');
+        
+        const areas = config.getBentoAreasWithoutAll();
+        const selAreas = shop.area ? shop.area.split(',').map(a => a.trim()) : [];
+        this.elements.bentoEditAreaCheckboxes.innerHTML = Object.entries(areas).map(([id, name]) => 
+            `<label class="checkbox-label"><input type="checkbox" name="editArea" value="${id}" ${selAreas.includes(id)?'checked':''}><span>${this.esc(name)}</span></label>`
+        ).join('');
+        
+        this.openModal(this.elements.bentoEditOverlay);
     }
 
-    updateConnectionStatus(status, message) {
-        const statusClass = {
-            'connected': 'status-connected',
-            'demo': 'status-demo',
-            'error': 'status-error'
-        };
+    openLocationEditModal(loc) {
+        this.elements.locationEditId.value = loc.id;
+        this.elements.locationEditUrl.value = loc.url || '';
+        this.elements.locationEditName.value = loc.name || '';
+        this.elements.locationEditAddress.value = loc.address || '';
+        this.elements.locationEditImage.value = loc.image || '';
+        this.elements.locationEditDescription.value = loc.description || '';
         
-        this.elements.settingsStatus.innerHTML = `
-            <span class="status-indicator ${statusClass[status] || 'status-demo'}"></span>
-            <span>${message}</span>
-        `;
+        const cats = config.getLocationCategoriesWithoutAll();
+        const selCats = loc.category ? loc.category.split(',').map(c => c.trim()) : [];
+        this.elements.locationEditCategoryCheckboxes.innerHTML = Object.entries(cats).map(([id, name]) => 
+            `<label class="checkbox-label"><input type="checkbox" name="editCategory" value="${id}" ${selCats.includes(id)?'checked':''}><span>${this.esc(name)}</span></label>`
+        ).join('');
+        
+        const areas = config.getLocationAreasWithoutAll();
+        const selAreas = loc.area ? loc.area.split(',').map(a => a.trim()) : [];
+        this.elements.locationEditAreaCheckboxes.innerHTML = Object.entries(areas).map(([id, name]) => 
+            `<label class="checkbox-label"><input type="checkbox" name="editArea" value="${id}" ${selAreas.includes(id)?'checked':''}><span>${this.esc(name)}</span></label>`
+        ).join('');
+        
+        this.openModal(this.elements.locationEditOverlay);
     }
 
-    openShopModal() {
-        // セットアップが完了していない場合は警告
-        if (!config.isReady()) {
-            this.showToast('先に設定画面でスプレッドシートを設定してください', 'error');
-            this.openSettingsModal();
-            return;
-        }
-        
-        this.elements.modalOverlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        this.elements.shopUrl.focus();
+    openSettingsModal() {
+        const s = config.getAll();
+        this.elements.gasUrl.value = s.gasUrl || '';
+        this.updateConnectionStatus(s.isSetupComplete ? 'connected' : 'demo');
+        this.openModal(this.elements.settingsOverlay);
     }
 
-    closeShopModal() {
-        this.elements.modalOverlay.classList.remove('active');
-        document.body.style.overflow = '';
-        this.resetShopForm();
+    updateConnectionStatus(status, text) {
+        const ind = this.elements.settingsStatus.querySelector('.status-indicator');
+        const sp = this.elements.settingsStatus.querySelector('span:last-child');
+        ind.className = 'status-indicator status-' + status;
+        sp.textContent = text || (status === 'connected' ? '接続済み' : '未設定（デモモード）');
     }
 
-    resetShopForm() {
-        this.elements.shopForm.reset();
-        this.elements.previewCard.style.display = 'none';
-    }
-
-    async openSettingsModal() {
-        const settings = config.getAll();
-        this.elements.gasUrl.value = settings.gasUrl || '';
-        
-        if (settings.isSetupComplete && settings.gasUrl) {
-            this.updateConnectionStatus('connected', '接続済み');
-        } else {
-            this.updateConnectionStatus('demo', '未設定（デモモード）');
-        }
-        
-        // カテゴリとエリア一覧を読み込んで描画
-        try {
-            const categories = await api.getCategories();
-            this.renderCategoryList(categories);
-            
-            const areas = await api.getAreas();
-            this.renderAreaList(areas);
-        } catch (error) {
-            this.renderCategoryList([]);
-            this.renderAreaList([]);
-        }
-        
-        this.elements.settingsOverlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-
-    closeSettingsModal() {
-        this.elements.settingsOverlay.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    // 編集モーダルを開く
-    openEditModal(shop) {
-        // フォームに値をセット
-        this.elements.editShopId.value = shop.id;
-        this.elements.editShopUrl.value = shop.url || '';
-        this.elements.editShopName.value = shop.name || '';
-        this.elements.editShopPrice.value = shop.price || '';
-        this.elements.editShopImage.value = shop.image || '';
-        this.elements.editShopDescription.value = shop.description || '';
-        
-        // カテゴリチェックボックスを生成・選択
-        const categories = config.getAllCategoriesWithoutAll();
-        const selectedCats = shop.category ? shop.category.split(',').map(c => c.trim()) : [];
-        
-        this.elements.editCategoryCheckboxes.innerHTML = Object.entries(categories).map(([id, name]) => `
-            <label class="checkbox-label">
-                <input type="checkbox" name="editCategory" value="${id}" ${selectedCats.includes(id) ? 'checked' : ''}>
-                <span>${this.escapeHtml(name)}</span>
-            </label>
+    renderCategoryList(container, items) {
+        if (!items || !items.length) { container.innerHTML = '<p style="color:#888;font-size:13px">項目がありません</p>'; return; }
+        container.innerHTML = items.map(item => `
+            <div class="category-item ${item.isDefault ? 'default' : ''}" data-id="${item.id}">
+                <span>${this.esc(item.name)}</span>
+                <button type="button" class="delete-btn" title="削除">&times;</button>
+            </div>
         `).join('');
-        
-        // エリアチェックボックスを生成・選択
-        const areas = config.getAllAreasWithoutAll();
-        const selectedAreas = shop.area ? shop.area.split(',').map(a => a.trim()) : [];
-        
-        this.elements.editAreaCheckboxes.innerHTML = Object.entries(areas).map(([id, name]) => `
-            <label class="checkbox-label">
-                <input type="checkbox" name="editArea" value="${id}" ${selectedAreas.includes(id) ? 'checked' : ''}>
-                <span>${this.escapeHtml(name)}</span>
-            </label>
-        `).join('');
-        
-        this.elements.editOverlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
     }
 
-    // 編集モーダルを閉じる
-    closeEditModal() {
-        this.elements.editOverlay.classList.remove('active');
-        document.body.style.overflow = '';
+    showSetupNotice(show) {
+        this.elements.setupNotice.style.display = show ? 'block' : 'none';
+        if (typeof adjustContentMargin === 'function') setTimeout(adjustContentMargin, 10);
     }
 
-    // 編集ボタンのローディング状態
-    setEditButtonLoading(loading) {
-        this.elements.saveEdit.disabled = loading;
-        this.elements.saveEdit.textContent = loading ? '保存中...' : '保存';
-    }
-
-    showPreview(data) {
-        this.elements.previewCard.style.display = 'flex';
-        this.elements.previewImage.src = data.image || 'https://via.placeholder.com/60?text=No+Image';
-        this.elements.previewTitle.textContent = data.title || 'タイトル未取得';
-        this.elements.previewUrl.textContent = data.url || '';
+    showLoading(type, show) {
+        const el = type === 'bento' ? this.elements.bentoLoading : this.elements.locationLoading;
+        el.style.display = show ? 'flex' : 'none';
     }
 
     showToast(message, type = 'success') {
-        this.elements.toastMessage.textContent = message;
-        this.elements.toast.className = `toast ${type === 'error' ? 'error' : ''} show`;
-        
-        setTimeout(() => {
-            this.elements.toast.classList.remove('show');
-        }, 3000);
-    }
-
-    setFetchButtonLoading(loading) {
-        this.elements.fetchBtn.disabled = loading;
-        this.elements.fetchBtn.textContent = loading ? '取得中...' : '情報取得';
-    }
-
-    setSubmitButtonLoading(loading) {
-        const btn = this.elements.shopForm.querySelector('.btn-submit');
-        btn.disabled = loading;
-        btn.textContent = loading ? '登録中...' : '登録する';
-    }
-
-    setSetupButtonLoading(loading) {
-        this.elements.runSetup.disabled = loading;
-        this.elements.runSetup.textContent = loading ? 'セットアップ中...' : '初回セットアップを実行';
-    }
-
-    escapeHtml(str) {
-        if (!str) return '';
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
-
-    isValidUrl(string) {
-        try {
-            new URL(string);
-            return true;
-        } catch (_) {
-            return false;
-        }
+        this.elements.toast.textContent = message;
+        this.elements.toast.className = 'toast ' + type + ' show';
+        setTimeout(() => this.elements.toast.classList.remove('show'), 3000);
     }
 
     async copyToClipboard(text) {
-        try {
-            await navigator.clipboard.writeText(text);
-            return true;
-        } catch (err) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
-            
-            try {
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                return true;
-            } catch (e) {
-                document.body.removeChild(textarea);
-                return false;
-            }
-        }
+        try { await navigator.clipboard.writeText(text); return true; } 
+        catch { return false; }
+    }
+
+    esc(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 }
 
-const ui = new UI();
+const ui = new LokeNaviUI();
