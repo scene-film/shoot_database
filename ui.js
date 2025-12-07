@@ -320,8 +320,10 @@ class LokeNaviUI {
         const previewEl = previewMap[type];
         if (!previewEl) return;
         
+        const noImageSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 200'%3E%3Crect fill='%23f0f0f0' width='400' height='200'/%3E%3Ctext x='200' y='100' text-anchor='middle' fill='%23999' font-size='20'%3ENo Image%3C/text%3E%3C/svg%3E";
+        
         if (imageUrl) {
-            previewEl.innerHTML = `<img src="${this.esc(imageUrl)}" alt="プレビュー" onerror="this.parentElement.innerHTML='<span class=\\'preview-placeholder\\'>画像を読み込めませんでした</span>'">`;
+            previewEl.innerHTML = `<img src="${this.esc(imageUrl)}" alt="プレビュー" onerror="this.src='${noImageSvg}'">`;
         } else {
             previewEl.innerHTML = '<span class="preview-placeholder">画像URLを入力するとプレビュー表示</span>';
         }
