@@ -54,6 +54,12 @@ class UI {
             addCategoryBtn: document.getElementById('addCategoryBtn'),
             categoryList: document.getElementById('categoryList'),
             
+            // エリア管理
+            newAreaName: document.getElementById('newAreaName'),
+            addAreaBtn: document.getElementById('addAreaBtn'),
+            areaList: document.getElementById('areaList'),
+            shopAreaCheckboxes: document.getElementById('shopAreaCheckboxes'),
+            
             setupNotice: document.getElementById('setupNotice'),
             setupNoticeBtn: document.getElementById('setupNoticeBtn'),
             
@@ -110,6 +116,47 @@ class UI {
         `).join('');
     }
 
+    // フィルターのエリアセレクトを更新
+    updateFilterAreaSelect() {
+        const select = this.elements.areaFilter;
+        const currentValue = select.value || 'all';
+        
+        select.innerHTML = Object.entries(AREAS).map(([id, name]) => `
+            <option value="${id}" ${id === currentValue ? 'selected' : ''}>${name}</option>
+        `).join('');
+    }
+
+    // 登録フォームのエリアチェックボックスを更新
+    updateFormAreaCheckboxes() {
+        const container = this.elements.shopAreaCheckboxes;
+        const areas = config.getAllAreasWithoutAll();
+        
+        container.innerHTML = Object.entries(areas).map(([id, name]) => `
+            <label class="checkbox-label">
+                <input type="checkbox" name="area" value="${id}">
+                <span>${this.escapeHtml(name)}</span>
+            </label>
+        `).join('');
+    }
+
+    // エリア一覧を描画
+    renderAreaList(areas) {
+        if (!areas || areas.length === 0) {
+            this.elements.areaList.innerHTML = '<p style="color: #888; font-size: 13px;">エリアがありません</p>';
+            return;
+        }
+        
+        this.elements.areaList.innerHTML = areas.map(area => {
+            const isDefault = area.isDefault === true || area.isDefault === 'true';
+            return `
+                <div class="category-item ${isDefault ? 'default' : ''}" data-id="${area.id}" data-type="area">
+                    <span>${this.escapeHtml(area.name)}</span>
+                    <button type="button" class="delete-btn" title="削除">&times;</button>
+                </div>
+            `;
+        }).join('');
+    }
+
     renderShops(shops) {
         this.elements.shopCount.textContent = shops.length;
         
@@ -126,6 +173,10 @@ class UI {
             const categories = shop.category ? shop.category.split(',').map(c => c.trim()) : [];
             const categoryLabels = categories.map(c => CATEGORIES[c] || c).join(', ');
             
+            // エリアを配列として処理
+            const areas = shop.area ? shop.area.split(',').map(a => a.trim()) : [];
+            const areaLabels = areas.map(a => AREAS[a] || a).join(', ');
+            
             return `
             <article class="shop-card" onclick="window.open('${this.escapeHtml(shop.url)}', '_blank')">
                 <img 
@@ -139,21 +190,12 @@ class UI {
                     <h3 class="shop-name">${this.escapeHtml(shop.name)}</h3>
                     ${shop.description ? `<p class="shop-description">${this.escapeHtml(shop.description)}</p>` : ''}
                     <div class="shop-meta">
-                        <span class="shop-meta-item">${this.escapeHtml(shop.area)}</span>
+                        <span class="shop-meta-item">${areaLabels || '未設定'}</span>
                         <span class="shop-meta-item">${PRICE_RANGES[shop.price] || shop.price}</span>
                     </div>
                 </div>
             </article>
         `}).join('');
-    }
-
-    updateAreaFilter(shops) {
-        const areas = [...new Set(shops.map(shop => shop.area))].filter(Boolean).sort();
-        
-        this.elements.areaFilter.innerHTML = '<option value="all">すべてのエリア</option>';
-        areas.forEach(area => {
-            this.elements.areaFilter.innerHTML += `<option value="${area}">${area}</option>`;
-        });
     }
 
     showLoading(show) {
@@ -211,12 +253,16 @@ class UI {
             this.updateConnectionStatus('demo', '未設定（デモモード）');
         }
         
-        // カテゴリ一覧を読み込んで描画
+        // カテゴリとエリア一覧を読み込んで描画
         try {
             const categories = await api.getCategories();
             this.renderCategoryList(categories);
+            
+            const areas = await api.getAreas();
+            this.renderAreaList(areas);
         } catch (error) {
             this.renderCategoryList([]);
+            this.renderAreaList([]);
         }
         
         this.elements.settingsOverlay.classList.add('active');
