@@ -1,424 +1,415 @@
 // ===========================
-// app.js - メインアプリケーションロジック
+// app.js - アプリケーション
 // ===========================
 
-let shops = [];
-let filteredShops = [];
-let currentFilters = {
-    category: 'all',
-    area: 'all',
-    price: 'all',
-    search: ''
-};
+let bentoShops = [];
+let locations = [];
+let filteredBento = [];
+let filteredLocations = [];
+
+let bentoFilters = { category: 'all', area: 'all', price: 'all', search: '' };
+let locationFilters = { category: 'all', area: 'all', search: '' };
 
 document.addEventListener('DOMContentLoaded', async () => {
     ui.init();
-    
-    // ヘッダーの高さに応じてコンテンツの位置を調整
-    adjustContentMargin();
-    window.addEventListener('resize', adjustContentMargin);
-    
-    // カテゴリ・エリアUIを初期化（デフォルトで表示）
-    ui.updateFilterCategoryChips();
-    ui.updateFormCategoryCheckboxes();
-    ui.updateFilterAreaSelect();
-    ui.updateFormAreaCheckboxes();
-    
+    initUI();
     initEventListeners();
     checkSetupStatus();
-    
-    // 全データを一括読み込み（1リクエストで高速化）
-    ui.showLoading(true);
+    await loadAllData();
+});
+
+function initUI() {
+    ui.updateBentoCategoryChips();
+    ui.updateBentoAreaSelect();
+    ui.updateBentoFormCheckboxes();
+    ui.updateLocationCategoryChips();
+    ui.updateLocationAreaSelect();
+    ui.updateLocationFormCheckboxes();
+}
+
+function checkSetupStatus() {
+    ui.showSetupNotice(!config.isReady());
+}
+
+async function loadAllData() {
+    ui.showLoading('bento', true);
+    ui.showLoading('location', true);
     
     try {
         const data = await api.getAll();
         
-        // カテゴリ更新
-        config.updateCategories(data.categories);
-        ui.updateFilterCategoryChips();
-        ui.updateFormCategoryCheckboxes();
+        config.updateBentoCategories(data.bentoCategories || []);
+        config.updateBentoAreas(data.bentoAreas || []);
+        config.updateLocationCategories(data.locationCategories || []);
+        config.updateLocationAreas(data.locationAreas || []);
         
-        // エリア更新
-        config.updateAreas(data.areas);
-        ui.updateFilterAreaSelect();
-        ui.updateFormAreaCheckboxes();
+        initUI();
         
-        // 店舗表示
-        shops = data.shops;
-        applyFilters();
-    } catch (error) {
-        console.error('Load error:', error);
-        shops = [];
-        applyFilters();
+        bentoShops = data.bentoShops || [];
+        locations = data.locations || [];
+        
+        applyBentoFilters();
+        applyLocationFilters();
+    } catch (e) {
+        console.error('Load error:', e);
+        bentoShops = [];
+        locations = [];
+        applyBentoFilters();
+        applyLocationFilters();
     } finally {
-        ui.showLoading(false);
-        // データ読み込み後に再調整
-        adjustContentMargin();
-    }
-});
-
-// ヘッダーの高さに応じてコンテンツの余白を調整
-function adjustContentMargin() {
-    const header = document.querySelector('.header');
-    const shopsSection = document.querySelector('.shops-section');
-    const setupNotice = document.getElementById('setupNotice');
-    
-    if (header && shopsSection) {
-        // セットアップ通知の表示状態でヘッダー位置を調整
-        const noticeVisible = setupNotice && setupNotice.style.display !== 'none';
-        const noticeHeight = noticeVisible ? setupNotice.offsetHeight : 0;
-        
-        header.style.top = noticeHeight + 'px';
-        
-        const headerHeight = header.offsetHeight;
-        shopsSection.style.marginTop = (headerHeight + noticeHeight) + 'px';
+        ui.showLoading('bento', false);
+        ui.showLoading('location', false);
     }
 }
 
 function initEventListeners() {
-    // 登録モーダル
-    ui.elements.openModal.addEventListener('click', () => ui.openShopModal());
-    ui.elements.closeModal.addEventListener('click', () => ui.closeShopModal());
-    ui.elements.cancelBtn.addEventListener('click', () => ui.closeShopModal());
-    ui.elements.modalOverlay.addEventListener('click', (e) => {
-        if (e.target === ui.elements.modalOverlay) ui.closeShopModal();
+    // サイドバー
+    ui.elements.sidebarBtns.forEach(btn => {
+        btn.addEventListener('click', () => ui.switchPage(btn.dataset.page));
     });
     
-    // 設定モーダル
+    // 弁当フィルター
+    ui.elements.bentoCategoryChips.addEventListener('click', e => {
+        if (e.target.classList.contains('chip')) {
+            ui.elements.bentoCategoryChips.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            e.target.classList.add('active');
+            bentoFilters.category = e.target.dataset.category;
+            applyBentoFilters();
+        }
+    });
+    ui.elements.bentoAreaFilter.addEventListener('change', e => { bentoFilters.area = e.target.value; applyBentoFilters(); });
+    ui.elements.bentoPriceFilter.addEventListener('change', e => { bentoFilters.price = e.target.value; applyBentoFilters(); });
+    ui.elements.bentoSearchInput.addEventListener('input', debounce(e => { bentoFilters.search = e.target.value.toLowerCase(); applyBentoFilters(); }, 300));
+    
+    // ロケ地フィルター
+    ui.elements.locationCategoryChips.addEventListener('click', e => {
+        if (e.target.classList.contains('chip')) {
+            ui.elements.locationCategoryChips.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            e.target.classList.add('active');
+            locationFilters.category = e.target.dataset.category;
+            applyLocationFilters();
+        }
+    });
+    ui.elements.locationAreaFilter.addEventListener('change', e => { locationFilters.area = e.target.value; applyLocationFilters(); });
+    ui.elements.locationSearchInput.addEventListener('input', debounce(e => { locationFilters.search = e.target.value.toLowerCase(); applyLocationFilters(); }, 300));
+    
+    // 弁当モーダル
+    ui.elements.openBentoModal.addEventListener('click', () => ui.openModal(ui.elements.bentoModalOverlay));
+    ui.elements.closeBentoModal.addEventListener('click', () => ui.closeModal(ui.elements.bentoModalOverlay));
+    ui.elements.bentoModalOverlay.addEventListener('click', e => { if (e.target === ui.elements.bentoModalOverlay) ui.closeModal(ui.elements.bentoModalOverlay); });
+    ui.elements.bentoForm.addEventListener('submit', handleBentoSubmit);
+    ui.elements.bentoFetchOgp.addEventListener('click', () => fetchOgp('bento'));
+    
+    // ロケ地モーダル
+    ui.elements.openLocationModal.addEventListener('click', () => ui.openModal(ui.elements.locationModalOverlay));
+    ui.elements.closeLocationModal.addEventListener('click', () => ui.closeModal(ui.elements.locationModalOverlay));
+    ui.elements.locationModalOverlay.addEventListener('click', e => { if (e.target === ui.elements.locationModalOverlay) ui.closeModal(ui.elements.locationModalOverlay); });
+    ui.elements.locationForm.addEventListener('submit', handleLocationSubmit);
+    ui.elements.locationFetchOgp.addEventListener('click', () => fetchOgp('location'));
+    
+    // 弁当編集
+    ui.elements.closeBentoEdit.addEventListener('click', () => ui.closeModal(ui.elements.bentoEditOverlay));
+    ui.elements.cancelBentoEdit.addEventListener('click', () => ui.closeModal(ui.elements.bentoEditOverlay));
+    ui.elements.bentoEditOverlay.addEventListener('click', e => { if (e.target === ui.elements.bentoEditOverlay) ui.closeModal(ui.elements.bentoEditOverlay); });
+    ui.elements.bentoEditForm.addEventListener('submit', handleBentoEditSubmit);
+    
+    // ロケ地編集
+    ui.elements.closeLocationEdit.addEventListener('click', () => ui.closeModal(ui.elements.locationEditOverlay));
+    ui.elements.cancelLocationEdit.addEventListener('click', () => ui.closeModal(ui.elements.locationEditOverlay));
+    ui.elements.locationEditOverlay.addEventListener('click', e => { if (e.target === ui.elements.locationEditOverlay) ui.closeModal(ui.elements.locationEditOverlay); });
+    ui.elements.locationEditForm.addEventListener('submit', handleLocationEditSubmit);
+    
+    // グリッドの編集・削除
+    ui.elements.bentoGrid.addEventListener('click', handleGridClick);
+    ui.elements.locationGrid.addEventListener('click', handleGridClick);
+    
+    // 設定
     ui.elements.openSettings.addEventListener('click', () => ui.openSettingsModal());
-    ui.elements.closeSettings.addEventListener('click', () => ui.closeSettingsModal());
-    ui.elements.cancelSettings.addEventListener('click', () => ui.closeSettingsModal());
-    ui.elements.settingsOverlay.addEventListener('click', (e) => {
-        if (e.target === ui.elements.settingsOverlay) ui.closeSettingsModal();
-    });
-    
-    // 設定アクション
+    ui.elements.closeSettings.addEventListener('click', () => ui.closeModal(ui.elements.settingsOverlay));
+    ui.elements.settingsOverlay.addEventListener('click', e => { if (e.target === ui.elements.settingsOverlay) ui.closeModal(ui.elements.settingsOverlay); });
+    ui.elements.setupNoticeBtn?.addEventListener('click', () => ui.openSettingsModal());
     ui.elements.testConnection.addEventListener('click', testConnection);
     ui.elements.runSetup.addEventListener('click', runSetup);
     ui.elements.copyGasCode.addEventListener('click', copyGASCode);
     ui.elements.resetSettings.addEventListener('click', resetSettings);
     
-    // カテゴリ管理
-    ui.elements.addCategoryBtn.addEventListener('click', addCategory);
-    ui.elements.newCategoryName.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addCategory();
-        }
-    });
-    ui.elements.categoryList.addEventListener('click', (e) => {
-        if (e.target.classList.contains('delete-btn')) {
-            const item = e.target.closest('.category-item');
-            if (item) {
-                deleteCategory(item.dataset.id);
-            }
-        }
-    });
-
-    // エリア管理
-    ui.elements.addAreaBtn.addEventListener('click', addArea);
-    ui.elements.newAreaName.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addArea();
-        }
-    });
-    ui.elements.areaList.addEventListener('click', (e) => {
-        if (e.target.classList.contains('delete-btn')) {
-            const item = e.target.closest('.category-item');
-            if (item && item.dataset.type === 'area') {
-                deleteArea(item.dataset.id);
-            }
-        }
-    });
+    // カテゴリ・エリア管理
+    ui.elements.addBentoCategoryBtn.addEventListener('click', () => addCategory('bento', 'category'));
+    ui.elements.addBentoAreaBtn.addEventListener('click', () => addCategory('bento', 'area'));
+    ui.elements.addLocationCategoryBtn.addEventListener('click', () => addCategory('location', 'category'));
+    ui.elements.addLocationAreaBtn.addEventListener('click', () => addCategory('location', 'area'));
     
-    // セットアップ通知
-    if (ui.elements.setupNoticeBtn) {
-        ui.elements.setupNoticeBtn.addEventListener('click', () => ui.openSettingsModal());
-    }
+    ui.elements.bentoCategoryList.addEventListener('click', e => handleCategoryDelete(e, 'bento', 'category'));
+    ui.elements.bentoAreaList.addEventListener('click', e => handleCategoryDelete(e, 'bento', 'area'));
+    ui.elements.locationCategoryList.addEventListener('click', e => handleCategoryDelete(e, 'location', 'category'));
+    ui.elements.locationAreaList.addEventListener('click', e => handleCategoryDelete(e, 'location', 'area'));
     
-    // フォーム
-    ui.elements.shopForm.addEventListener('submit', handleFormSubmit);
-    ui.elements.fetchBtn.addEventListener('click', fetchOGPData);
-    
-    // URL入力時に自動でOGP取得
-    let urlInputTimeout;
-    ui.elements.shopUrl.addEventListener('input', (e) => {
-        clearTimeout(urlInputTimeout);
-        const url = e.target.value.trim();
-        
-        // 有効なURLの場合、1秒後に自動取得
-        if (url && ui.isValidUrl(url)) {
-            urlInputTimeout = setTimeout(() => {
-                fetchOGPData();
-            }, 1000);
-        }
-    });
-    
-    // ペースト時は即座に取得
-    ui.elements.shopUrl.addEventListener('paste', (e) => {
-        setTimeout(() => {
-            const url = ui.elements.shopUrl.value.trim();
-            if (url && ui.isValidUrl(url)) {
-                fetchOGPData();
-            }
-        }, 100);
-    });
-    
-    // フィルター
-    ui.elements.categoryChips.addEventListener('click', (e) => {
-        if (e.target.classList.contains('chip')) {
-            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-            e.target.classList.add('active');
-            currentFilters.category = e.target.dataset.category;
-            applyFilters();
-        }
-    });
-    
-    ui.elements.areaFilter.addEventListener('change', (e) => {
-        currentFilters.area = e.target.value;
-        applyFilters();
-    });
-    
-    ui.elements.priceFilter.addEventListener('change', (e) => {
-        currentFilters.price = e.target.value;
-        applyFilters();
-    });
-    
-    let searchTimeout;
-    ui.elements.searchInput.addEventListener('input', (e) => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            currentFilters.search = e.target.value.toLowerCase();
-            applyFilters();
-        }, 300);
-    });
-    
-    // キーボード
-    document.addEventListener('keydown', (e) => {
+    // ESCキー
+    document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
-            ui.closeShopModal();
-            ui.closeSettingsModal();
-            ui.closeEditModal();
+            ui.closeModal(ui.elements.bentoModalOverlay);
+            ui.closeModal(ui.elements.locationModalOverlay);
+            ui.closeModal(ui.elements.bentoEditOverlay);
+            ui.closeModal(ui.elements.locationEditOverlay);
+            ui.closeModal(ui.elements.settingsOverlay);
         }
     });
-    
-    // 店舗グリッドの編集・削除ボタン
-    ui.elements.shopsGrid.addEventListener('click', (e) => {
-        // 編集ボタン
-        if (e.target.classList.contains('shop-edit-btn')) {
-            e.stopPropagation();
-            const shopId = e.target.dataset.id;
-            const shop = shops.find(s => s.id.toString() === shopId.toString());
-            if (shop) {
-                ui.openEditModal(shop);
-            }
-        }
-        // 削除ボタン
-        if (e.target.classList.contains('shop-delete-btn')) {
-            e.stopPropagation();
-            const shopId = e.target.dataset.id;
-            deleteShop(shopId);
-        }
-    });
-    
-    // 編集モーダル
-    ui.elements.closeEditModal.addEventListener('click', () => ui.closeEditModal());
-    ui.elements.cancelEdit.addEventListener('click', () => ui.closeEditModal());
-    ui.elements.editOverlay.addEventListener('click', (e) => {
-        if (e.target === ui.elements.editOverlay) {
-            ui.closeEditModal();
-        }
-    });
-    ui.elements.editForm.addEventListener('submit', handleEditSubmit);
 }
 
-// セットアップ状態を確認
-function checkSetupStatus() {
-    const isSetup = config.isReady();
-    ui.showSetupNotice(!isSetup);
-}
-
-// データ読み込み
-async function loadShops() {
-    ui.showLoading(true);
-    
-    try {
-        shops = await api.getShops();
-        applyFilters();
-    } catch (error) {
-        console.error('Failed to load shops:', error);
-        ui.showToast('データの読み込みに失敗しました', 'error');
-        shops = [];
-        applyFilters();
-    } finally {
-        ui.showLoading(false);
-    }
-}
-
-// フィルター適用
-function applyFilters() {
-    filteredShops = shops.filter(shop => {
-        // カテゴリフィルター（複数カテゴリ対応）
-        if (currentFilters.category !== 'all') {
-            const shopCategories = shop.category ? shop.category.split(',').map(c => c.trim()) : [];
-            if (!shopCategories.includes(currentFilters.category)) {
-                return false;
-            }
+function applyBentoFilters() {
+    filteredBento = bentoShops.filter(shop => {
+        if (bentoFilters.category !== 'all') {
+            const cats = shop.category ? shop.category.split(',').map(c => c.trim()) : [];
+            if (!cats.includes(bentoFilters.category)) return false;
         }
-        // エリアフィルター（複数エリア対応）
-        if (currentFilters.area !== 'all') {
-            const shopAreas = shop.area ? shop.area.split(',').map(a => a.trim()) : [];
-            if (!shopAreas.includes(currentFilters.area)) {
-                return false;
-            }
+        if (bentoFilters.area !== 'all') {
+            const areas = shop.area ? shop.area.split(',').map(a => a.trim()) : [];
+            if (!areas.includes(bentoFilters.area)) return false;
         }
-        if (currentFilters.price !== 'all' && shop.price !== currentFilters.price) {
-            return false;
-        }
-        if (currentFilters.search) {
-            const searchText = `${shop.name} ${shop.description} ${shop.area}`.toLowerCase();
-            if (!searchText.includes(currentFilters.search)) {
-                return false;
-            }
-        }
+        if (bentoFilters.price !== 'all' && shop.price !== bentoFilters.price) return false;
+        if (bentoFilters.search && !`${shop.name} ${shop.description}`.toLowerCase().includes(bentoFilters.search)) return false;
         return true;
     });
-    
-    ui.renderShops(filteredShops);
+    ui.renderBentoShops(filteredBento);
 }
 
-// OGP情報取得
-async function fetchOGPData() {
-    const url = ui.elements.shopUrl.value.trim();
+function applyLocationFilters() {
+    filteredLocations = locations.filter(loc => {
+        if (locationFilters.category !== 'all') {
+            const cats = loc.category ? loc.category.split(',').map(c => c.trim()) : [];
+            if (!cats.includes(locationFilters.category)) return false;
+        }
+        if (locationFilters.area !== 'all') {
+            const areas = loc.area ? loc.area.split(',').map(a => a.trim()) : [];
+            if (!areas.includes(locationFilters.area)) return false;
+        }
+        if (locationFilters.search && !`${loc.name} ${loc.description} ${loc.address}`.toLowerCase().includes(locationFilters.search)) return false;
+        return true;
+    });
+    ui.renderLocations(filteredLocations);
+}
+
+async function fetchOgp(type) {
+    const urlEl = type === 'bento' ? ui.elements.bentoUrl : ui.elements.locationUrl;
+    const nameEl = type === 'bento' ? ui.elements.bentoName : ui.elements.locationName;
+    const imageEl = type === 'bento' ? ui.elements.bentoImage : ui.elements.locationImage;
+    const descEl = type === 'bento' ? ui.elements.bentoDescription : ui.elements.locationDescription;
+    const btn = type === 'bento' ? ui.elements.bentoFetchOgp : ui.elements.locationFetchOgp;
     
-    if (!url) {
-        return;
-    }
+    const url = urlEl.value.trim();
+    if (!url) { ui.showToast('URLを入力してください', 'error'); return; }
     
-    if (!ui.isValidUrl(url)) {
-        return;
-    }
-    
-    ui.setFetchButtonLoading(true);
+    btn.disabled = true;
+    btn.textContent = '取得中...';
     
     try {
-        const ogpData = await api.fetchOGP(url);
-        
-        ui.showPreview({
-            title: ogpData.title || 'タイトル未取得',
-            url: url,
-            image: ogpData.image
-        });
-        
-        // 取得したデータを自動入力（空欄の場合のみ）
-        if (ogpData.title && !ui.elements.shopName.value) {
-            ui.elements.shopName.value = ogpData.title;
-        }
-        if (ogpData.image && !ui.elements.shopImage.value) {
-            ui.elements.shopImage.value = ogpData.image;
-        }
-        // メモは自動入力しない（手動入力のみ）
-        
-        if (ogpData.title) {
-            ui.showToast('情報を取得しました');
-        } else {
-            ui.showToast('一部情報を取得できませんでした', 'error');
-        }
-    } catch (error) {
-        console.error('OGP fetch error:', error);
-        
-        // エラー時もプレビューは表示
-        ui.showPreview({
-            title: 'タイトル未取得',
-            url: url,
-            image: null
-        });
-        
-        ui.showToast('情報の取得に失敗しました', 'error');
+        const ogp = await api.fetchOgp(url);
+        if (ogp.title) nameEl.value = ogp.title;
+        if (ogp.image) imageEl.value = ogp.image;
+        if (ogp.description) descEl.value = ogp.description;
+        ui.showToast('情報を取得しました');
+    } catch (e) {
+        ui.showToast('取得に失敗しました', 'error');
     } finally {
-        ui.setFetchButtonLoading(false);
+        btn.disabled = false;
+        btn.textContent = '取得';
     }
 }
 
-// フォーム送信
-async function handleFormSubmit(e) {
+function getCheckedValues(container) {
+    return Array.from(container.querySelectorAll('input:checked')).map(cb => cb.value);
+}
+
+async function handleBentoSubmit(e) {
     e.preventDefault();
     
-    // 選択されたカテゴリを取得
-    const selectedCategories = [];
-    const catCheckboxes = ui.elements.shopCategoryCheckboxes.querySelectorAll('input[type="checkbox"]:checked');
-    catCheckboxes.forEach(cb => selectedCategories.push(cb.value));
+    const cats = getCheckedValues(ui.elements.bentoCategoryCheckboxes);
+    const areas = getCheckedValues(ui.elements.bentoAreaCheckboxes);
     
-    if (selectedCategories.length === 0) {
-        ui.showToast('カテゴリを1つ以上選択してください', 'error');
-        return;
-    }
+    if (!cats.length) { ui.showToast('カテゴリを選択してください', 'error'); return; }
+    if (!areas.length) { ui.showToast('エリアを選択してください', 'error'); return; }
     
-    // 選択されたエリアを取得
-    const selectedAreas = [];
-    const areaCheckboxes = ui.elements.shopAreaCheckboxes.querySelectorAll('input[type="checkbox"]:checked');
-    areaCheckboxes.forEach(cb => selectedAreas.push(cb.value));
-    
-    if (selectedAreas.length === 0) {
-        ui.showToast('配達エリアを1つ以上選択してください', 'error');
-        return;
-    }
-    
-    ui.setSubmitButtonLoading(true);
-    
-    const shopData = {
-        url: ui.elements.shopUrl.value.trim(),
-        name: ui.elements.shopName.value.trim(),
-        category: selectedCategories.join(','),
-        area: selectedAreas.join(','),
-        price: ui.elements.shopPrice.value,
-        image: ui.elements.shopImage.value.trim(),
-        description: ui.elements.shopDescription.value.trim()
-    };
+    ui.elements.bentoSubmit.disabled = true;
+    ui.elements.bentoSubmit.textContent = '登録中...';
     
     try {
-        await api.addShop(shopData);
+        await api.addBentoShop({
+            url: ui.elements.bentoUrl.value.trim(),
+            name: ui.elements.bentoName.value.trim(),
+            category: cats.join(','),
+            area: areas.join(','),
+            price: ui.elements.bentoPrice.value,
+            image: ui.elements.bentoImage.value.trim(),
+            description: ui.elements.bentoDescription.value.trim()
+        });
         
-        // データを再読み込み
-        await loadShops();
-        
-        // モーダルを閉じてフォームをリセット
-        ui.closeShopModal();
-        ui.elements.shopForm.reset();
-        
-        ui.showToast('お店を登録しました');
-    } catch (error) {
-        console.error('Submit error:', error);
-        ui.showToast(error.message || '登録に失敗しました', 'error');
+        ui.closeModal(ui.elements.bentoModalOverlay);
+        ui.elements.bentoForm.reset();
+        ui.showToast('登録しました');
+        await loadAllData();
+    } catch (e) {
+        ui.showToast(e.message, 'error');
     } finally {
-        ui.setSubmitButtonLoading(false);
+        ui.elements.bentoSubmit.disabled = false;
+        ui.elements.bentoSubmit.textContent = '登録する';
     }
 }
 
-// 接続テスト
-async function testConnection() {
-    const gasUrl = ui.elements.gasUrl.value.trim();
+async function handleLocationSubmit(e) {
+    e.preventDefault();
     
-    if (!gasUrl) {
-        ui.showToast('GAS URLを入力してください', 'error');
-        return;
+    const cats = getCheckedValues(ui.elements.locationCategoryCheckboxes);
+    const areas = getCheckedValues(ui.elements.locationAreaCheckboxes);
+    
+    if (!cats.length) { ui.showToast('カテゴリを選択してください', 'error'); return; }
+    if (!areas.length) { ui.showToast('エリアを選択してください', 'error'); return; }
+    
+    ui.elements.locationSubmit.disabled = true;
+    ui.elements.locationSubmit.textContent = '登録中...';
+    
+    try {
+        await api.addLocation({
+            url: ui.elements.locationUrl.value.trim(),
+            name: ui.elements.locationName.value.trim(),
+            category: cats.join(','),
+            area: areas.join(','),
+            address: ui.elements.locationAddress.value.trim(),
+            image: ui.elements.locationImage.value.trim(),
+            description: ui.elements.locationDescription.value.trim()
+        });
+        
+        ui.closeModal(ui.elements.locationModalOverlay);
+        ui.elements.locationForm.reset();
+        ui.showToast('登録しました');
+        await loadAllData();
+    } catch (e) {
+        ui.showToast(e.message, 'error');
+    } finally {
+        ui.elements.locationSubmit.disabled = false;
+        ui.elements.locationSubmit.textContent = '登録する';
     }
+}
+
+async function handleBentoEditSubmit(e) {
+    e.preventDefault();
+    
+    const cats = getCheckedValues(ui.elements.bentoEditCategoryCheckboxes);
+    const areas = getCheckedValues(ui.elements.bentoEditAreaCheckboxes);
+    
+    if (!cats.length) { ui.showToast('カテゴリを選択してください', 'error'); return; }
+    if (!areas.length) { ui.showToast('エリアを選択してください', 'error'); return; }
+    
+    ui.elements.saveBentoEdit.disabled = true;
+    ui.elements.saveBentoEdit.textContent = '保存中...';
+    
+    try {
+        await api.updateBentoShop({
+            id: ui.elements.bentoEditId.value,
+            url: ui.elements.bentoEditUrl.value.trim(),
+            name: ui.elements.bentoEditName.value.trim(),
+            category: cats.join(','),
+            area: areas.join(','),
+            price: ui.elements.bentoEditPrice.value,
+            image: ui.elements.bentoEditImage.value.trim(),
+            description: ui.elements.bentoEditDescription.value.trim()
+        });
+        
+        ui.closeModal(ui.elements.bentoEditOverlay);
+        ui.showToast('更新しました');
+        await loadAllData();
+    } catch (e) {
+        ui.showToast(e.message, 'error');
+    } finally {
+        ui.elements.saveBentoEdit.disabled = false;
+        ui.elements.saveBentoEdit.textContent = '保存';
+    }
+}
+
+async function handleLocationEditSubmit(e) {
+    e.preventDefault();
+    
+    const cats = getCheckedValues(ui.elements.locationEditCategoryCheckboxes);
+    const areas = getCheckedValues(ui.elements.locationEditAreaCheckboxes);
+    
+    if (!cats.length) { ui.showToast('カテゴリを選択してください', 'error'); return; }
+    if (!areas.length) { ui.showToast('エリアを選択してください', 'error'); return; }
+    
+    ui.elements.saveLocationEdit.disabled = true;
+    ui.elements.saveLocationEdit.textContent = '保存中...';
+    
+    try {
+        await api.updateLocation({
+            id: ui.elements.locationEditId.value,
+            url: ui.elements.locationEditUrl.value.trim(),
+            name: ui.elements.locationEditName.value.trim(),
+            category: cats.join(','),
+            area: areas.join(','),
+            address: ui.elements.locationEditAddress.value.trim(),
+            image: ui.elements.locationEditImage.value.trim(),
+            description: ui.elements.locationEditDescription.value.trim()
+        });
+        
+        ui.closeModal(ui.elements.locationEditOverlay);
+        ui.showToast('更新しました');
+        await loadAllData();
+    } catch (e) {
+        ui.showToast(e.message, 'error');
+    } finally {
+        ui.elements.saveLocationEdit.disabled = false;
+        ui.elements.saveLocationEdit.textContent = '保存';
+    }
+}
+
+function handleGridClick(e) {
+    const editBtn = e.target.closest('.item-edit-btn');
+    const deleteBtn = e.target.closest('.item-delete-btn');
+    
+    if (editBtn) {
+        e.stopPropagation();
+        const { id, type } = editBtn.dataset;
+        if (type === 'bento') {
+            const shop = bentoShops.find(s => s.id.toString() === id);
+            if (shop) ui.openBentoEditModal(shop);
+        } else {
+            const loc = locations.find(l => l.id.toString() === id);
+            if (loc) ui.openLocationEditModal(loc);
+        }
+    }
+    
+    if (deleteBtn) {
+        e.stopPropagation();
+        const { id, type } = deleteBtn.dataset;
+        deleteItem(id, type);
+    }
+}
+
+async function deleteItem(id, type) {
+    const items = type === 'bento' ? bentoShops : locations;
+    const item = items.find(i => i.id.toString() === id);
+    if (!confirm(`「${item?.name || ''}」を削除しますか？`)) return;
+    
+    try {
+        if (type === 'bento') await api.deleteBentoShop(id);
+        else await api.deleteLocation(id);
+        ui.showToast('削除しました');
+        await loadAllData();
+    } catch (e) {
+        ui.showToast(e.message, 'error');
+    }
+}
+
+async function testConnection() {
+    const url = ui.elements.gasUrl.value.trim();
+    if (!url) { ui.showToast('URLを入力してください', 'error'); return; }
     
     ui.elements.testConnection.disabled = true;
     ui.elements.testConnection.textContent = 'テスト中...';
     
     try {
-        const result = await api.testConnection(gasUrl);
-        
-        if (result.success) {
-            ui.updateConnectionStatus('connected', '接続成功');
-            ui.showToast('接続成功');
-        } else {
-            ui.updateConnectionStatus('error', '接続失敗');
-            ui.showToast('接続失敗: ' + result.error, 'error');
-        }
-    } catch (error) {
+        const result = await api.testConnection(url);
+        ui.updateConnectionStatus(result.success ? 'connected' : 'error', result.success ? '接続成功' : '接続失敗');
+        ui.showToast(result.success ? '接続成功' : '接続失敗', result.success ? 'success' : 'error');
+    } catch (e) {
         ui.updateConnectionStatus('error', '接続エラー');
         ui.showToast('接続テストに失敗しました', 'error');
     } finally {
@@ -427,269 +418,100 @@ async function testConnection() {
     }
 }
 
-// 初回セットアップ実行
 async function runSetup() {
-    const gasUrl = ui.elements.gasUrl.value.trim();
+    const url = ui.elements.gasUrl.value.trim();
+    if (!url) { ui.showToast('URLを入力してください', 'error'); return; }
     
-    if (!gasUrl) {
-        ui.showToast('GAS URLを入力してください', 'error');
-        return;
-    }
-    
-    ui.setSetupButtonLoading(true);
+    ui.elements.runSetup.disabled = true;
+    ui.elements.runSetup.textContent = 'セットアップ中...';
     
     try {
-        const result = await api.setup(gasUrl);
-        
+        await api.setup(url);
         ui.updateConnectionStatus('connected', '接続済み');
-        ui.showToast(result.message || 'セットアップが完了しました');
-        
-        // 通知を非表示
+        ui.showToast('セットアップ完了');
         ui.showSetupNotice(false);
-        
-        // カテゴリとデータを再読み込み
-        await loadCategories();
-        await loadShops();
-        
-        // カテゴリ一覧を更新
-        const categories = await api.getCategories();
-        ui.renderCategoryList(categories);
-        
-        // モーダルを閉じる
-        setTimeout(() => {
-            ui.closeSettingsModal();
-        }, 1000);
-        
-    } catch (error) {
-        console.error('Setup error:', error);
+        await loadAllData();
+        await refreshSettingsLists();
+    } catch (e) {
         ui.updateConnectionStatus('error', 'セットアップ失敗');
-        ui.showToast(error.message || 'セットアップに失敗しました', 'error');
+        ui.showToast(e.message, 'error');
     } finally {
-        ui.setSetupButtonLoading(false);
+        ui.elements.runSetup.disabled = false;
+        ui.elements.runSetup.textContent = 'セットアップを実行';
     }
 }
 
-// GASコードをコピー
 async function copyGASCode() {
     const success = await ui.copyToClipboard(GAS_CODE);
-    
-    if (success) {
-        ui.showToast('コードをコピーしました');
-        ui.elements.copyGasCode.textContent = 'コピーしました';
-        setTimeout(() => {
-            ui.elements.copyGasCode.textContent = 'GASコードをコピー';
-        }, 2000);
-    } else {
-        ui.showToast('コピーに失敗しました', 'error');
-    }
+    ui.showToast(success ? 'コピーしました' : 'コピーに失敗しました', success ? 'success' : 'error');
 }
 
-// 設定をリセット
 function resetSettings() {
-    if (confirm('設定をリセットしますか？スプレッドシートのデータは削除されません。')) {
-        config.reset();
-        ui.elements.gasUrl.value = '';
-        ui.updateConnectionStatus('demo', '未設定（デモモード）');
-        ui.showSetupNotice(true);
-        ui.renderCategoryList([]);
-        ui.updateFilterCategoryChips();
-        ui.updateFormCategoryCheckboxes();
-        ui.showToast('設定をリセットしました');
-        loadShops();
+    if (!confirm('設定をリセットしますか？')) return;
+    config.reset();
+    ui.elements.gasUrl.value = '';
+    ui.updateConnectionStatus('demo');
+    ui.showSetupNotice(true);
+    ui.showToast('リセットしました');
+}
+
+async function addCategory(page, type) {
+    const inputEl = ui.elements[`new${capitalize(page)}${capitalize(type)}Name`];
+    const name = inputEl.value.trim();
+    if (!name) { ui.showToast('名前を入力してください', 'error'); return; }
+    
+    try {
+        if (page === 'bento' && type === 'category') await api.addBentoCategory(name);
+        else if (page === 'bento' && type === 'area') await api.addBentoArea(name);
+        else if (page === 'location' && type === 'category') await api.addLocationCategory(name);
+        else if (page === 'location' && type === 'area') await api.addLocationArea(name);
+        
+        inputEl.value = '';
+        ui.showToast('追加しました');
+        await loadAllData();
+        await refreshSettingsLists();
+    } catch (e) {
+        ui.showToast(e.message, 'error');
     }
 }
 
-// カテゴリを読み込み
-async function loadCategories() {
+async function handleCategoryDelete(e, page, type) {
+    if (!e.target.classList.contains('delete-btn')) return;
+    const item = e.target.closest('.category-item');
+    if (!item) return;
+    
+    const id = item.dataset.id;
+    if (!confirm('削除しますか？')) return;
+    
     try {
-        const categories = await api.getCategories();
-        config.updateCategories(categories);
-        ui.updateFilterCategoryChips();
-        ui.updateFormCategoryCheckboxes();
-        return categories;
-    } catch (error) {
-        console.error('Failed to load categories:', error);
-        // エラー時はデフォルトカテゴリを使用
-        return [];
+        if (page === 'bento' && type === 'category') await api.deleteBentoCategory(id);
+        else if (page === 'bento' && type === 'area') await api.deleteBentoArea(id);
+        else if (page === 'location' && type === 'category') await api.deleteLocationCategory(id);
+        else if (page === 'location' && type === 'area') await api.deleteLocationArea(id);
+        
+        ui.showToast('削除しました');
+        await loadAllData();
+        await refreshSettingsLists();
+    } catch (e) {
+        ui.showToast(e.message, 'error');
     }
 }
 
-// カテゴリを追加
-async function addCategory() {
-    const name = ui.elements.newCategoryName.value.trim();
-    
-    if (!name) {
-        ui.showToast('カテゴリ名を入力してください', 'error');
-        return;
-    }
-    
-    if (!api.hasGasUrl()) {
-        ui.showToast('スプレッドシートを設定してください', 'error');
-        return;
-    }
-    
+async function refreshSettingsLists() {
     try {
-        await api.addCategory(name);
-        ui.elements.newCategoryName.value = '';
-        
-        // カテゴリを再読み込み
-        await loadCategories();
-        ui.renderCategoryList(await api.getCategories());
-        
-        ui.showToast(`カテゴリ「${name}」を追加しました`);
-    } catch (error) {
-        ui.showToast(error.message, 'error');
-    }
+        const data = await api.getAll();
+        ui.renderCategoryList(ui.elements.bentoCategoryList, data.bentoCategories);
+        ui.renderCategoryList(ui.elements.bentoAreaList, data.bentoAreas);
+        ui.renderCategoryList(ui.elements.locationCategoryList, data.locationCategories);
+        ui.renderCategoryList(ui.elements.locationAreaList, data.locationAreas);
+    } catch (e) {}
 }
 
-// カテゴリを削除
-async function deleteCategory(id) {
-    const categories = config.getAllCategoriesWithoutAll();
-    const name = categories[id];
-    
-    if (!confirm(`カテゴリ「${name}」を削除しますか？`)) {
-        return;
-    }
-    
-    try {
-        await api.deleteCategory(id);
-        
-        // カテゴリを再読み込み
-        await loadCategories();
-        ui.renderCategoryList(await api.getCategories());
-        
-        ui.showToast(`カテゴリ「${name}」を削除しました`);
-    } catch (error) {
-        ui.showToast(error.message, 'error');
-    }
+function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// エリアを読み込み
-async function loadAreas() {
-    try {
-        const areas = await api.getAreas();
-        config.updateAreas(areas);
-        ui.updateFilterAreaSelect();
-        ui.updateFormAreaCheckboxes();
-        return areas;
-    } catch (error) {
-        console.error('Failed to load areas:', error);
-        return [];
-    }
-}
-
-// エリアを追加
-async function addArea() {
-    const name = ui.elements.newAreaName.value.trim();
-    
-    if (!name) {
-        ui.showToast('エリア名を入力してください', 'error');
-        return;
-    }
-    
-    if (!api.hasGasUrl()) {
-        ui.showToast('スプレッドシートを設定してください', 'error');
-        return;
-    }
-    
-    try {
-        await api.addArea(name);
-        ui.elements.newAreaName.value = '';
-        
-        await loadAreas();
-        ui.renderAreaList(await api.getAreas());
-        
-        ui.showToast(`エリア「${name}」を追加しました`);
-    } catch (error) {
-        ui.showToast(error.message, 'error');
-    }
-}
-
-// エリアを削除
-async function deleteArea(id) {
-    const areas = config.getAllAreasWithoutAll();
-    const name = areas[id];
-    
-    if (!confirm(`エリア「${name}」を削除しますか？`)) {
-        return;
-    }
-    
-    try {
-        await api.deleteArea(id);
-        
-        await loadAreas();
-        ui.renderAreaList(await api.getAreas());
-        
-        ui.showToast(`エリア「${name}」を削除しました`);
-    } catch (error) {
-        ui.showToast(error.message, 'error');
-    }
-}
-
-// 店舗を削除
-async function deleteShop(shopId) {
-    const shop = shops.find(s => s.id.toString() === shopId.toString());
-    const name = shop ? shop.name : '店舗';
-    
-    if (!confirm(`「${name}」を削除しますか？`)) {
-        return;
-    }
-    
-    try {
-        await api.deleteShop(shopId);
-        ui.showToast(`「${name}」を削除しました`);
-        await loadShops();
-    } catch (error) {
-        ui.showToast(error.message, 'error');
-    }
-}
-
-// 編集フォーム送信
-async function handleEditSubmit(e) {
-    e.preventDefault();
-    
-    // 選択されたカテゴリを取得
-    const selectedCategories = [];
-    const catCheckboxes = ui.elements.editCategoryCheckboxes.querySelectorAll('input[type="checkbox"]:checked');
-    catCheckboxes.forEach(cb => selectedCategories.push(cb.value));
-    
-    if (selectedCategories.length === 0) {
-        ui.showToast('カテゴリを1つ以上選択してください', 'error');
-        return;
-    }
-    
-    // 選択されたエリアを取得
-    const selectedAreas = [];
-    const areaCheckboxes = ui.elements.editAreaCheckboxes.querySelectorAll('input[type="checkbox"]:checked');
-    areaCheckboxes.forEach(cb => selectedAreas.push(cb.value));
-    
-    if (selectedAreas.length === 0) {
-        ui.showToast('配達エリアを1つ以上選択してください', 'error');
-        return;
-    }
-    
-    ui.setEditButtonLoading(true);
-    
-    const shopData = {
-        id: ui.elements.editShopId.value,
-        url: ui.elements.editShopUrl.value.trim(),
-        name: ui.elements.editShopName.value.trim(),
-        category: selectedCategories.join(','),
-        area: selectedAreas.join(','),
-        price: ui.elements.editShopPrice.value,
-        image: ui.elements.editShopImage.value.trim(),
-        description: ui.elements.editShopDescription.value.trim()
-    };
-    
-    try {
-        await api.updateShop(shopData);
-        ui.showToast('更新しました');
-        ui.closeEditModal();
-        await loadShops();
-    } catch (error) {
-        console.error('Update error:', error);
-        ui.showToast(error.message || '更新に失敗しました', 'error');
-    } finally {
-        ui.setEditButtonLoading(false);
-    }
+function debounce(fn, delay) {
+    let timer;
+    return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
 }
