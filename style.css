@@ -454,7 +454,7 @@ body {
 }
 
 .loading {
-    display: flex;
+    display: none;
     flex-direction: column;
     align-items: center;
     padding: 60px 20px;
