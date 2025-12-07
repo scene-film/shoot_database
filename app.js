@@ -23,10 +23,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     initEventListeners();
     checkSetupStatus();
     
-    // カテゴリ・エリア・ショップを読み込み
-    await loadCategories();
-    await loadAreas();
-    loadShops();
+    // 全データを一括読み込み（1リクエストで高速化）
+    ui.showLoading(true);
+    
+    try {
+        const data = await api.getAll();
+        
+        // カテゴリ更新
+        config.updateCategories(data.categories);
+        ui.updateFilterCategoryChips();
+        ui.updateFormCategoryCheckboxes();
+        
+        // エリア更新
+        config.updateAreas(data.areas);
+        ui.updateFilterAreaSelect();
+        ui.updateFormAreaCheckboxes();
+        
+        // 店舗表示
+        shops = data.shops;
+        applyFilters();
+    } catch (error) {
+        console.error('Load error:', error);
+        shops = [];
+        applyFilters();
+    } finally {
+        ui.showLoading(false);
+    }
 });
 
 function initEventListeners() {
