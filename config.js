@@ -76,10 +76,6 @@ class Config {
         if (saved) {
             return { ...DEFAULT_CONFIG, ...JSON.parse(saved) };
         }
-        // localStorageになければデフォルトGAS URLを使用
-        if (DEFAULT_GAS_URL) {
-            return { gasUrl: DEFAULT_GAS_URL, isSetupComplete: true };
-        }
         return { ...DEFAULT_CONFIG };
     }
 
@@ -105,8 +101,10 @@ class Config {
     }
 
     isReady() {
-        const gasUrl = this.settings.gasUrl || DEFAULT_GAS_URL;
-        return !!gasUrl;
+        // DEFAULT_GAS_URLがあれば常にready
+        if (DEFAULT_GAS_URL) return true;
+        // なければlocalStorageの設定を確認
+        return this.settings.isSetupComplete && this.settings.gasUrl;
     }
 
     reset() {
