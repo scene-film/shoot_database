@@ -122,6 +122,7 @@ function handleRequest(e) {
       case 'setup': return setup();
       case 'getShops': return getShops();
       case 'addShop': return addShop(e);
+      case 'updateShop': return updateShop(e);
       case 'deleteShop': return deleteShop(e);
       case 'getCategories': return getCategories();
       case 'addCategory': return addCategory(e);
@@ -250,6 +251,38 @@ function deleteShop(e) {
   for (let i = 1; i < ids.length; i++) {
     if (ids[i][0].toString() === id.toString()) {
       sheet.deleteRow(i + 1);
+      return createResponse({ success: true });
+    }
+  }
+  return createResponse({ success: false, error: '見つからない' });
+}
+
+function updateShop(e) {
+  let data;
+  if (e.parameter.data) {
+    data = JSON.parse(Utilities.newBlob(Utilities.base64Decode(e.parameter.data)).getDataAsString('UTF-8'));
+  } else {
+    return createResponse({ success: false, error: 'データがありません' });
+  }
+  
+  if (!data.id) return createResponse({ success: false, error: 'IDが必要' });
+  
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('shops');
+  if (!sheet) return createResponse({ success: false, error: 'シートなし' });
+  
+  const lastRow = sheet.getLastRow();
+  const ids = sheet.getRange(1, 1, lastRow, 1).getValues();
+  
+  for (let i = 1; i < ids.length; i++) {
+    if (ids[i][0].toString() === data.id.toString()) {
+      const rowNum = i + 1;
+      sheet.getRange(rowNum, 2).setValue(data.url || '');
+      sheet.getRange(rowNum, 3).setValue(data.name || '');
+      sheet.getRange(rowNum, 4).setValue(data.category || '');
+      sheet.getRange(rowNum, 5).setValue(data.area || '');
+      sheet.getRange(rowNum, 6).setValue(data.price || '');
+      sheet.getRange(rowNum, 7).setValue(data.image || '');
+      sheet.getRange(rowNum, 8).setValue(data.description || '');
       return createResponse({ success: true });
     }
   }
