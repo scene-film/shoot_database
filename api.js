@@ -167,53 +167,87 @@ class LokeNaviAPI {
         }
     }
 
-    // OGP取得（強化版）
+    // OGP取得（複数プロキシ対応）
     async fetchOgp(url) {
-        try {
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-            const response = await fetch(proxyUrl);
-            const data = await response.json();
-            
-            if (!data.contents) return {};
-            
-            const html = data.contents;
-            const getMetaContent = (property) => {
-                const match = html.match(new RegExp(`<meta[^>]*(?:property|name)=["']${property}["'][^>]*content=["']([^"']*)["']`, 'i'))
-                    || html.match(new RegExp(`<meta[^>]*content=["']([^"']*?)["'][^>]*(?:property|name)=["']${property}["']`, 'i'));
-                return match ? match[1] : null;
-            };
-            
-            const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
-            
-            // 画像取得（優先順位: og:image > twitter:image > logo > favicon）
-            let image = getMetaContent('og:image') || getMetaContent('twitter:image');
-            
-            if (!image) {
-                // ロゴを探す
-                const logoMatch = html.match(/<img[^>]*class=["'][^"']*logo[^"']*["'][^>]*src=["']([^"']+)["']/i)
-                    || html.match(/<img[^>]*src=["']([^"']+)["'][^>]*class=["'][^"']*logo/i)
-                    || html.match(/<link[^>]*rel=["']icon["'][^>]*href=["']([^"']+)["']/i)
-                    || html.match(/<link[^>]*rel=["']shortcut icon["'][^>]*href=["']([^"']+)["']/i)
-                    || html.match(/<link[^>]*rel=["']apple-touch-icon["'][^>]*href=["']([^"']+)["']/i);
+        const proxies = [
+            (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+            (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+            (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
+        ];
+        
+        let html = '';
+        
+        for (const proxy of proxies) {
+            try {
+                const proxyUrl = proxy(url);
+                const response = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
                 
-                if (logoMatch) {
-                    image = logoMatch[1];
-                    // 相対パスを絶対パスに変換
-                    if (image && !image.startsWith('http')) {
-                        const urlObj = new URL(url);
-                        if (image.startsWith('//')) {
-                            image = urlObj.protocol + image;
-                        } else if (image.startsWith('/')) {
-                            image = urlObj.origin + image;
-                        } else {
-                            image = urlObj.origin + '/' + image;
-                        }
+                if (proxyUrl.includes('allorigins')) {
+                    const data = await response.json();
+                    if (data.contents) {
+                        html = data.contents;
+                        break;
+                    }
+                } else {
+                    const text = await response.text();
+                    if (text && text.includes('<')) {
+                        html = text;
+                        break;
                     }
                 }
+            } catch (e) {
+                console.log('Proxy failed:', e.message);
+                continue;
             }
+        }
+        
+        if (!html) return {};
+        
+        const getMetaContent = (property) => {
+            const patterns = [
+                new RegExp(`<meta[^>]*(?:property|name)=["']${property}["'][^>]*content=["']([^"']*)["']`, 'i'),
+                new RegExp(`<meta[^>]*content=["']([^"']*?)["'][^>]*(?:property|name)=["']${property}["']`, 'i')
+            ];
+            for (const pattern of patterns) {
+                const match = html.match(pattern);
+                if (match) return match[1];
+            }
+            return null;
+        };
+        
+        const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+        
+        // 画像取得（優先順位: og:image > twitter:image > 最初の大きな画像 > logo > favicon）
+        let image = getMetaContent('og:image') || getMetaContent('twitter:image');
+        
+        if (!image) {
+            // コンテンツ内の画像を探す（小さいアイコンを除外）
+            const imgMatches = html.matchAll(/<img[^>]*src=["']([^"']+)["'][^>]*>/gi);
+            for (const match of imgMatches) {
+                const src = match[1];
+                // 小さいアイコンや追跡ピクセルを除外
+                if (!src.includes('icon') && !src.includes('logo') && !src.includes('pixel') && 
+                    !src.includes('tracking') && !src.includes('1x1') && !src.includes('spacer')) {
+                    image = src;
+                    break;
+                }
+            }
+        }
+        
+        if (!image) {
+            // ロゴやfaviconを探す
+            const logoMatch = html.match(/<img[^>]*class=["'][^"']*logo[^"']*["'][^>]*src=["']([^"']+)["']/i)
+                || html.match(/<img[^>]*src=["']([^"']+)["'][^>]*class=["'][^"']*logo/i)
+                || html.match(/<link[^>]*rel=["']apple-touch-icon["'][^>]*href=["']([^"']+)["']/i)
+                || html.match(/<link[^>]*rel=["']icon["'][^>]*href=["']([^"']+)["']/i)
+                || html.match(/<link[^>]*rel=["']shortcut icon["'][^>]*href=["']([^"']+)["']/i);
             
-            // 相対パスを絶対パスに変換（og:imageなどの場合）
-            if (image && !image.startsWith('http')) {
+            if (logoMatch) image = logoMatch[1];
+        }
+        
+        // 相対パスを絶対パスに変換
+        if (image && !image.startsWith('http') && !image.startsWith('data:')) {
+            try {
                 const urlObj = new URL(url);
                 if (image.startsWith('//')) {
                     image = urlObj.protocol + image;
@@ -222,17 +256,14 @@ class LokeNaviAPI {
                 } else {
                     image = urlObj.origin + '/' + image;
                 }
-            }
-            
-            return {
-                title: getMetaContent('og:title') || (titleMatch ? titleMatch[1].trim() : ''),
-                description: getMetaContent('og:description') || getMetaContent('description') || '',
-                image: image || ''
-            };
-        } catch (e) {
-            console.error('OGP fetch error:', e);
-            return {};
+            } catch (e) {}
         }
+        
+        return {
+            title: getMetaContent('og:title') || (titleMatch ? titleMatch[1].trim() : ''),
+            description: getMetaContent('og:description') || getMetaContent('description') || '',
+            image: image || ''
+        };
     }
 }
 
