@@ -120,6 +120,7 @@ function handleRequest(e) {
   try {
     switch(action) {
       case 'setup': return setup();
+      case 'getAll': return getAll();
       case 'getShops': return getShops();
       case 'addShop': return addShop(e);
       case 'updateShop': return updateShop(e);
@@ -135,6 +136,46 @@ function handleRequest(e) {
   } catch (error) {
     return createResponse({ success: false, error: error.toString() });
   }
+}
+
+function getAll() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // 店舗
+  const shopsSheet = ss.getSheetByName('shops');
+  let shops = [];
+  if (shopsSheet && shopsSheet.getLastRow() > 1) {
+    const data = shopsSheet.getRange(1, 1, shopsSheet.getLastRow(), 9).getValues();
+    const headers = data[0];
+    for (let i = 1; i < data.length; i++) {
+      if (!data[i][0]) continue;
+      const shop = {};
+      headers.forEach((h, idx) => shop[h] = data[i][idx] || '');
+      shops.push(shop);
+    }
+  }
+  
+  // カテゴリ
+  const catSheet = ss.getSheetByName('categories');
+  let categories = [];
+  if (catSheet && catSheet.getLastRow() > 1) {
+    const data = catSheet.getRange(2, 1, catSheet.getLastRow() - 1, 4).getValues();
+    categories = data.filter(r => r[0]).map(r => ({
+      id: r[0], name: r[1], isDefault: r[2] === true || r[2] === 'true'
+    }));
+  }
+  
+  // エリア
+  const areaSheet = ss.getSheetByName('areas');
+  let areas = [];
+  if (areaSheet && areaSheet.getLastRow() > 1) {
+    const data = areaSheet.getRange(2, 1, areaSheet.getLastRow() - 1, 4).getValues();
+    areas = data.filter(r => r[0]).map(r => ({
+      id: r[0], name: r[1], isDefault: r[2] === true || r[2] === 'true'
+    }));
+  }
+  
+  return createResponse({ success: true, shops, categories, areas });
 }
 
 function setup() {
