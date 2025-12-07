@@ -378,13 +378,15 @@ async function handleFormSubmit(e) {
     };
     
     try {
-        const newShop = await api.addShop(shopData);
+        await api.addShop(shopData);
         
-        shops.unshift(newShop);
-        ui.updateAreaFilter(shops);
-        applyFilters();
+        // データを再読み込み
+        await loadShops();
         
+        // モーダルを閉じてフォームをリセット
         ui.closeShopModal();
+        ui.elements.shopForm.reset();
+        
         ui.showToast('お店を登録しました');
     } catch (error) {
         console.error('Submit error:', error);
