@@ -14,15 +14,18 @@ let currentFilters = {
 document.addEventListener('DOMContentLoaded', async () => {
     ui.init();
     
-    // カテゴリUIを初期化（デフォルトで表示）
+    // カテゴリ・エリアUIを初期化（デフォルトで表示）
     ui.updateFilterCategoryChips();
     ui.updateFormCategoryCheckboxes();
+    ui.updateFilterAreaSelect();
+    ui.updateFormAreaCheckboxes();
     
     initEventListeners();
     checkSetupStatus();
     
-    // カテゴリとショップを読み込み
+    // カテゴリ・エリア・ショップを読み込み
     await loadCategories();
+    await loadAreas();
     loadShops();
 });
 
@@ -62,6 +65,23 @@ function initEventListeners() {
             const item = e.target.closest('.category-item');
             if (item) {
                 deleteCategory(item.dataset.id);
+            }
+        }
+    });
+
+    // エリア管理
+    ui.elements.addAreaBtn.addEventListener('click', addArea);
+    ui.elements.newAreaName.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addArea();
+        }
+    });
+    ui.elements.areaList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-btn')) {
+            const item = e.target.closest('.category-item');
+            if (item && item.dataset.type === 'area') {
+                deleteArea(item.dataset.id);
             }
         }
     });
@@ -149,7 +169,6 @@ async function loadShops() {
     
     try {
         shops = await api.getShops();
-        ui.updateAreaFilter(shops);
         applyFilters();
     } catch (error) {
         console.error('Failed to load shops:', error);
@@ -171,8 +190,12 @@ function applyFilters() {
                 return false;
             }
         }
-        if (currentFilters.area !== 'all' && shop.area !== currentFilters.area) {
-            return false;
+        // エリアフィルター（複数エリア対応）
+        if (currentFilters.area !== 'all') {
+            const shopAreas = shop.area ? shop.area.split(',').map(a => a.trim()) : [];
+            if (!shopAreas.includes(currentFilters.area)) {
+                return false;
+            }
         }
         if (currentFilters.price !== 'all' && shop.price !== currentFilters.price) {
             return false;
@@ -248,11 +271,21 @@ async function handleFormSubmit(e) {
     
     // 選択されたカテゴリを取得
     const selectedCategories = [];
-    const checkboxes = ui.elements.shopCategoryCheckboxes.querySelectorAll('input[type="checkbox"]:checked');
-    checkboxes.forEach(cb => selectedCategories.push(cb.value));
+    const catCheckboxes = ui.elements.shopCategoryCheckboxes.querySelectorAll('input[type="checkbox"]:checked');
+    catCheckboxes.forEach(cb => selectedCategories.push(cb.value));
     
     if (selectedCategories.length === 0) {
         ui.showToast('カテゴリを1つ以上選択してください', 'error');
+        return;
+    }
+    
+    // 選択されたエリアを取得
+    const selectedAreas = [];
+    const areaCheckboxes = ui.elements.shopAreaCheckboxes.querySelectorAll('input[type="checkbox"]:checked');
+    areaCheckboxes.forEach(cb => selectedAreas.push(cb.value));
+    
+    if (selectedAreas.length === 0) {
+        ui.showToast('配達エリアを1つ以上選択してください', 'error');
         return;
     }
     
@@ -261,8 +294,8 @@ async function handleFormSubmit(e) {
     const shopData = {
         url: ui.elements.shopUrl.value.trim(),
         name: ui.elements.shopName.value.trim(),
-        category: selectedCategories.join(','),  // カンマ区切りで保存
-        area: ui.elements.shopArea.value.trim(),
+        category: selectedCategories.join(','),
+        area: selectedAreas.join(','),
         price: ui.elements.shopPrice.value,
         image: ui.elements.shopImage.value.trim(),
         description: ui.elements.shopDescription.value.trim()
@@ -448,6 +481,68 @@ async function deleteCategory(id) {
         ui.renderCategoryList(await api.getCategories());
         
         ui.showToast(`カテゴリ「${name}」を削除しました`);
+    } catch (error) {
+        ui.showToast(error.message, 'error');
+    }
+}
+
+// エリアを読み込み
+async function loadAreas() {
+    try {
+        const areas = await api.getAreas();
+        config.updateAreas(areas);
+        ui.updateFilterAreaSelect();
+        ui.updateFormAreaCheckboxes();
+        return areas;
+    } catch (error) {
+        console.error('Failed to load areas:', error);
+        return [];
+    }
+}
+
+// エリアを追加
+async function addArea() {
+    const name = ui.elements.newAreaName.value.trim();
+    
+    if (!name) {
+        ui.showToast('エリア名を入力してください', 'error');
+        return;
+    }
+    
+    if (!api.hasGasUrl()) {
+        ui.showToast('スプレッドシートを設定してください', 'error');
+        return;
+    }
+    
+    try {
+        await api.addArea(name);
+        ui.elements.newAreaName.value = '';
+        
+        await loadAreas();
+        ui.renderAreaList(await api.getAreas());
+        
+        ui.showToast(`エリア「${name}」を追加しました`);
+    } catch (error) {
+        ui.showToast(error.message, 'error');
+    }
+}
+
+// エリアを削除
+async function deleteArea(id) {
+    const areas = config.getAllAreasWithoutAll();
+    const name = areas[id];
+    
+    if (!confirm(`エリア「${name}」を削除しますか？`)) {
+        return;
+    }
+    
+    try {
+        await api.deleteArea(id);
+        
+        await loadAreas();
+        ui.renderAreaList(await api.getAreas());
+        
+        ui.showToast(`エリア「${name}」を削除しました`);
     } catch (error) {
         ui.showToast(error.message, 'error');
     }
