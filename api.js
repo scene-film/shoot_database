@@ -65,6 +65,37 @@ class BentoAPI {
     // データ取得
     // ===========================
 
+    // 全データを一括取得（高速化）
+    async getAll() {
+        if (!this.hasGasUrl()) {
+            return {
+                shops: [],
+                categories: Object.entries(DEFAULT_CATEGORIES).map(([id, name]) => ({ id, name, isDefault: true })),
+                areas: Object.entries(DEFAULT_AREAS).map(([id, name]) => ({ id, name, isDefault: true }))
+            };
+        }
+
+        try {
+            const gasUrl = config.get('gasUrl');
+            const url = `${gasUrl}?action=getAll&t=${Date.now()}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'データの取得に失敗しました');
+            }
+            
+            return {
+                shops: data.shops || [],
+                categories: data.categories || [],
+                areas: data.areas || []
+            };
+        } catch (error) {
+            console.error('GetAll error:', error);
+            throw error;
+        }
+    }
+
     async getShops() {
         // GAS URLが設定されていない場合はデモデータ
         if (!this.hasGasUrl()) {
