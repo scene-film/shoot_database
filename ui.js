@@ -30,7 +30,8 @@ class LokeNaviUI {
             closeBentoModal: document.getElementById('closeBentoModal'),
             bentoForm: document.getElementById('bentoForm'),
             bentoUrl: document.getElementById('bentoUrl'),
-            bentoFetchOgp: document.getElementById('bentoFetchOgp'),
+            bentoFetchStatus: document.getElementById('bentoFetchStatus'),
+            bentoImagePreview: document.getElementById('bentoImagePreview'),
             bentoName: document.getElementById('bentoName'),
             bentoImage: document.getElementById('bentoImage'),
             bentoCategoryCheckboxes: document.getElementById('bentoCategoryCheckboxes'),
@@ -66,7 +67,8 @@ class LokeNaviUI {
             closeLocationModal: document.getElementById('closeLocationModal'),
             locationForm: document.getElementById('locationForm'),
             locationUrl: document.getElementById('locationUrl'),
-            locationFetchOgp: document.getElementById('locationFetchOgp'),
+            locationFetchStatus: document.getElementById('locationFetchStatus'),
+            locationImagePreview: document.getElementById('locationImagePreview'),
             locationName: document.getElementById('locationName'),
             locationImage: document.getElementById('locationImage'),
             locationCategoryCheckboxes: document.getElementById('locationCategoryCheckboxes'),
@@ -295,6 +297,25 @@ class LokeNaviUI {
     showLoading(type, show) {
         const el = type === 'bento' ? this.elements.bentoLoading : this.elements.locationLoading;
         if (el) el.style.display = show ? 'flex' : 'none';
+    }
+
+    updateImagePreview(type, imageUrl) {
+        const previewEl = type === 'bento' ? this.elements.bentoImagePreview : this.elements.locationImagePreview;
+        if (!previewEl) return;
+        
+        if (imageUrl) {
+            previewEl.innerHTML = `<img src="${this.esc(imageUrl)}" alt="プレビュー" onerror="this.parentElement.innerHTML='<span class=\\'preview-placeholder\\'>画像を読み込めませんでした</span>'">`;
+        } else {
+            previewEl.innerHTML = '<span class="preview-placeholder">画像URLを入力するとプレビュー表示</span>';
+        }
+    }
+
+    updateFetchStatus(type, status, message) {
+        const statusEl = type === 'bento' ? this.elements.bentoFetchStatus : this.elements.locationFetchStatus;
+        if (!statusEl) return;
+        
+        statusEl.className = 'fetch-status ' + status;
+        statusEl.textContent = message || '';
     }
 
     showToast(message, type = 'success') {
