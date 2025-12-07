@@ -277,12 +277,12 @@ body {
    Shops Section
    =========================== */
 .shops-section {
-    padding: 32px 0 60px;
-    margin-top: 170px; /* ヘッダー + フィルター分 */
+    padding: 24px 0 60px;
+    margin-top: 150px; /* ヘッダー + フィルター分 */
 }
 
 .setup-notice:not([style*="display: none"]) ~ .header + .shops-section {
-    margin-top: 210px; /* セットアップ通知表示時 */
+    margin-top: 190px; /* セットアップ通知表示時 */
 }
 
 .shops-header {
