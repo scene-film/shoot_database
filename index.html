@@ -160,6 +160,75 @@
 
     <!-- 設定モーダル -->
     <div class="modal-overlay" id="settingsOverlay">
+
+    <!-- 編集モーダル -->
+    <div class="modal-overlay" id="editOverlay">
+        <div class="modal" id="editModal">
+            <div class="modal-header">
+                <h2 class="modal-title">店舗情報を編集</h2>
+                <button class="modal-close" id="closeEditModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editShopId">
+                    
+                    <div class="form-group">
+                        <label class="form-label">URL <span class="required">*</span></label>
+                        <input type="url" class="form-input" id="editShopUrl" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">店舗名 <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="editShopName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">カテゴリ <span class="required">*</span></label>
+                        <div class="category-checkboxes" id="editCategoryCheckboxes">
+                            <!-- 動的に生成される -->
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">配達エリア <span class="required">*</span></label>
+                            <div class="category-checkboxes" id="editAreaCheckboxes">
+                                <!-- 動的に生成される -->
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">価格帯 <span class="required">*</span></label>
+                            <select class="form-select" id="editShopPrice" required>
+                                <option value="">選択してください</option>
+                                <option value="under500">〜500円</option>
+                                <option value="500to800">500〜800円</option>
+                                <option value="800to1000">800〜1,000円</option>
+                                <option value="over1000">1,000円〜</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">画像URL</label>
+                        <input type="url" class="form-input" id="editShopImage">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">説明</label>
+                        <textarea class="form-textarea" id="editShopDescription" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancelEdit">キャンセル</button>
+                        <button type="submit" class="btn-primary" id="saveEdit">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 設定モーダル -->
+    <div class="modal-overlay" id="settingsOverlay">
         <div class="modal modal-settings">
             <div class="modal-header">
                 <h2 class="modal-title">スプレッドシート設定</h2>
