@@ -184,12 +184,13 @@ class UI {
         
         this.elements.noResults.style.display = 'none';
         
-        this.elements.shopsGrid.innerHTML = shops.map(shop => {
-            // カテゴリを配列として処理（カンマ区切り文字列対応）
+        // DocumentFragmentで一括DOM操作
+        const fragment = document.createDocumentFragment();
+        const template = document.createElement('template');
+        
+        const html = shops.map(shop => {
             const categories = shop.category ? shop.category.split(',').map(c => c.trim()) : [];
             const categoryLabels = categories.map(c => CATEGORIES[c] || c).join(', ');
-            
-            // エリアを配列として処理
             const areas = shop.area ? shop.area.split(',').map(a => a.trim()) : [];
             const areaLabels = areas.map(a => AREAS[a] || a).join(', ');
             
@@ -201,10 +202,12 @@ class UI {
                 </div>
                 <div class="shop-card-content" onclick="window.open('${this.escapeHtml(shop.url)}', '_blank')">
                     <img 
-                        src="${this.escapeHtml(shop.image) || 'https://via.placeholder.com/400x200?text=No+Image'}" 
+                        src="${this.escapeHtml(shop.image) || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22400%22 height=%22200%22/%3E%3Ctext x=%22200%22 y=%22100%22 text-anchor=%22middle%22 fill=%22%23999%22%3ENo Image%3C/text%3E%3C/svg%3E'}" 
                         alt="${this.escapeHtml(shop.name)}" 
                         class="shop-image"
-                        onerror="this.src='https://via.placeholder.com/400x200?text=No+Image'"
+                        loading="lazy"
+                        decoding="async"
+                        onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22400%22 height=%22200%22/%3E%3Ctext x=%22200%22 y=%22100%22 text-anchor=%22middle%22 fill=%22%23999%22%3ENo Image%3C/text%3E%3C/svg%3E'"
                     >
                     <div class="shop-content">
                         <span class="shop-category">${categoryLabels || 'その他'}</span>
@@ -218,6 +221,8 @@ class UI {
                 </div>
             </article>
         `}).join('');
+        
+        this.elements.shopsGrid.innerHTML = html;
     }
 
     showLoading(show) {
