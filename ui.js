@@ -294,7 +294,7 @@ class LokeNaviUI {
 
     showLoading(type, show) {
         const el = type === 'bento' ? this.elements.bentoLoading : this.elements.locationLoading;
-        el.style.display = show ? 'flex' : 'none';
+        if (el) el.style.display = show ? 'flex' : 'none';
     }
 
     showToast(message, type = 'success') {
