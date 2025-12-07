@@ -182,6 +182,45 @@ class BentoAPI {
     }
 
     // ===========================
+    // データ更新
+    // ===========================
+
+    async updateShop(shopData) {
+        if (!this.hasGasUrl()) {
+            throw new Error('スプレッドシートが設定されていません');
+        }
+
+        try {
+            const gasUrl = config.get('gasUrl');
+            const encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(shopData))));
+            const url = `${gasUrl}?action=updateShop&data=${encodeURIComponent(encodedData)}&t=${Date.now()}`;
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                redirect: 'follow'
+            });
+            
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error('Response parse error:', text);
+                throw new Error('レスポンスの解析に失敗しました');
+            }
+            
+            if (!data.success) {
+                throw new Error(data.error || '更新に失敗しました');
+            }
+            
+            return data;
+        } catch (error) {
+            console.error('Update error:', error);
+            throw error;
+        }
+    }
+
+    // ===========================
     // カテゴリ取得
     // ===========================
 
