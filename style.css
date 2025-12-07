@@ -105,10 +105,6 @@ body {
     z-index: 1000;
 }
 
-.setup-notice + .header {
-    top: 40px;
-}
-
 .header-inner {
     max-width: 1400px;
     margin: 0 auto;
