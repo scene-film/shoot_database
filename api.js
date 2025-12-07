@@ -299,6 +299,119 @@ class BentoAPI {
     }
 
     // ===========================
+    // エリア取得
+    // ===========================
+
+    async getAreas() {
+        if (!this.hasGasUrl()) {
+            return Object.entries(DEFAULT_AREAS).map(([id, name]) => ({
+                id,
+                name,
+                isDefault: true
+            }));
+        }
+
+        try {
+            const gasUrl = config.get('gasUrl');
+            const url = `${gasUrl}?action=getAreas&t=${Date.now()}`;
+            const response = await fetch(url);
+            
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error('レスポンスの解析に失敗しました');
+            }
+            
+            if (!data.success) {
+                throw new Error(data.error || 'エリアの取得に失敗しました');
+            }
+            
+            return data.areas || [];
+        } catch (error) {
+            console.error('Get areas error:', error);
+            throw error;
+        }
+    }
+
+    // ===========================
+    // エリア追加
+    // ===========================
+
+    async addArea(name) {
+        if (!this.hasGasUrl()) {
+            throw new Error('スプレッドシートが設定されていません');
+        }
+
+        const areaId = 'area_' + Date.now();
+
+        try {
+            const gasUrl = config.get('gasUrl');
+            const url = `${gasUrl}?action=addArea&id=${encodeURIComponent(areaId)}&name=${encodeURIComponent(name)}&t=${Date.now()}`;
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                redirect: 'follow'
+            });
+            
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error('レスポンスの解析に失敗しました');
+            }
+            
+            if (!data.success) {
+                throw new Error(data.error || 'エリアの追加に失敗しました');
+            }
+            
+            return data.area;
+        } catch (error) {
+            console.error('Add area error:', error);
+            throw error;
+        }
+    }
+
+    // ===========================
+    // エリア削除
+    // ===========================
+
+    async deleteArea(areaId) {
+        if (!this.hasGasUrl()) {
+            throw new Error('スプレッドシートが設定されていません');
+        }
+
+        try {
+            const gasUrl = config.get('gasUrl');
+            const url = `${gasUrl}?action=deleteArea&id=${encodeURIComponent(areaId)}&t=${Date.now()}`;
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                redirect: 'follow'
+            });
+            
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error('レスポンスの解析に失敗しました');
+            }
+            
+            if (!data.success) {
+                throw new Error(data.error || 'エリアの削除に失敗しました');
+            }
+            
+            return data;
+        } catch (error) {
+            console.error('Delete area error:', error);
+            throw error;
+        }
+    }
+
+    // ===========================
     // 接続テスト
     // ===========================
 
