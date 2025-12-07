@@ -88,6 +88,10 @@ class UI {
     showSetupNotice(show) {
         if (this.elements.setupNotice) {
             this.elements.setupNotice.style.display = show ? 'block' : 'none';
+            // 余白を再調整
+            if (typeof adjustContentMargin === 'function') {
+                setTimeout(adjustContentMargin, 10);
+            }
         }
     }
 
