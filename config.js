@@ -2,6 +2,10 @@
 // config.js - 設定管理
 // ===========================
 
+// ★★★ ここにGAS URLを設定 ★★★
+// デプロイしたGASのURLを設定すると、セットアップなしで使えます
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwXi1txL5jffdi8HD7B0ylDx4g9uQ3ZvXfGNxh2maLBxDiWEerUDvpfu5-RC77qhDCU/exec';
+
 // 弁当デフォルトカテゴリ
 const DEFAULT_BENTO_CATEGORIES = {
     onigiri: 'おにぎり・サンド',
@@ -72,6 +76,10 @@ class Config {
         if (saved) {
             return { ...DEFAULT_CONFIG, ...JSON.parse(saved) };
         }
+        // localStorageになければデフォルトGAS URLを使用
+        if (DEFAULT_GAS_URL) {
+            return { gasUrl: DEFAULT_GAS_URL, isSetupComplete: true };
+        }
         return { ...DEFAULT_CONFIG };
     }
 
@@ -81,15 +89,24 @@ class Config {
     }
 
     get(key) {
+        // gasUrlはデフォルトGAS URLをフォールバック
+        if (key === 'gasUrl') {
+            return this.settings.gasUrl || DEFAULT_GAS_URL;
+        }
         return this.settings[key];
     }
 
     getAll() {
-        return { ...this.settings };
+        return { 
+            ...this.settings,
+            gasUrl: this.settings.gasUrl || DEFAULT_GAS_URL,
+            isSetupComplete: this.settings.isSetupComplete || !!DEFAULT_GAS_URL
+        };
     }
 
     isReady() {
-        return this.settings.isSetupComplete && this.settings.gasUrl;
+        const gasUrl = this.settings.gasUrl || DEFAULT_GAS_URL;
+        return !!gasUrl;
     }
 
     reset() {
