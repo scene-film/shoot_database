@@ -149,6 +149,48 @@ body {
     color: var(--color-text);
 }
 
+/* ヘッダー内フィルター */
+.header-filters {
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg);
+}
+
+.header-filters-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.header-filters .filter-category {
+    flex: 1;
+}
+
+.header-filters .filter-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.header-filters .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.header-filters .filter-row .filter-group {
+    min-width: 140px;
+    flex: 1;
+    max-width: 200px;
+}
+
+.header-filters .search-group {
+    flex: 2;
+    max-width: 300px;
+}
+
 .btn-add {
     padding: 8px 16px;
     background: var(--color-primary);
@@ -167,24 +209,8 @@ body {
 }
 
 /* ===========================
-   Filters
+   Filters (in header)
    =========================== */
-.filters {
-    padding: 80px 0 24px;
-    background: #fff;
-    border-bottom: 1px solid var(--color-border);
-}
-
-.setup-notice ~ .filters {
-    padding-top: 120px;
-}
-
-.filter-bar {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
 .filter-group {
     display: flex;
     flex-direction: column;
@@ -228,12 +254,6 @@ body {
     color: #fff;
 }
 
-.filter-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
-}
-
 .filter-select,
 .filter-input {
     padding: 8px 12px;
@@ -258,6 +278,11 @@ body {
    =========================== */
 .shops-section {
     padding: 32px 0 60px;
+    margin-top: 170px; /* ヘッダー + フィルター分 */
+}
+
+.setup-notice:not([style*="display: none"]) ~ .header + .shops-section {
+    margin-top: 210px; /* セットアップ通知表示時 */
 }
 
 .shops-header {
@@ -483,6 +508,29 @@ body {
 
 .modal-settings {
     max-width: 560px;
+}
+
+/* 編集モーダル */
+#editModal {
+    max-width: 600px;
+}
+
+#editModal .modal-body {
+    padding: 24px;
+}
+
+#editModal .form-group {
+    margin-bottom: 20px;
+}
+
+#editModal .form-row {
+    gap: 20px;
+}
+
+#editModal .form-actions {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
 }
 
 .modal-overlay.active .modal {
