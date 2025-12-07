@@ -60,6 +60,22 @@ class UI {
             areaList: document.getElementById('areaList'),
             shopAreaCheckboxes: document.getElementById('shopAreaCheckboxes'),
             
+            // 編集モーダル
+            editOverlay: document.getElementById('editOverlay'),
+            editModal: document.getElementById('editModal'),
+            closeEditModal: document.getElementById('closeEditModal'),
+            editForm: document.getElementById('editForm'),
+            editShopId: document.getElementById('editShopId'),
+            editShopUrl: document.getElementById('editShopUrl'),
+            editShopName: document.getElementById('editShopName'),
+            editCategoryCheckboxes: document.getElementById('editCategoryCheckboxes'),
+            editAreaCheckboxes: document.getElementById('editAreaCheckboxes'),
+            editShopPrice: document.getElementById('editShopPrice'),
+            editShopImage: document.getElementById('editShopImage'),
+            editShopDescription: document.getElementById('editShopDescription'),
+            cancelEdit: document.getElementById('cancelEdit'),
+            saveEdit: document.getElementById('saveEdit'),
+            
             setupNotice: document.getElementById('setupNotice'),
             setupNoticeBtn: document.getElementById('setupNoticeBtn'),
             
@@ -178,20 +194,26 @@ class UI {
             const areaLabels = areas.map(a => AREAS[a] || a).join(', ');
             
             return `
-            <article class="shop-card" onclick="window.open('${this.escapeHtml(shop.url)}', '_blank')">
-                <img 
-                    src="${this.escapeHtml(shop.image) || 'https://via.placeholder.com/400x200?text=No+Image'}" 
-                    alt="${this.escapeHtml(shop.name)}" 
-                    class="shop-image"
-                    onerror="this.src='https://via.placeholder.com/400x200?text=No+Image'"
-                >
-                <div class="shop-content">
-                    <span class="shop-category">${categoryLabels || 'その他'}</span>
-                    <h3 class="shop-name">${this.escapeHtml(shop.name)}</h3>
-                    ${shop.description ? `<p class="shop-description">${this.escapeHtml(shop.description)}</p>` : ''}
-                    <div class="shop-meta">
-                        <span class="shop-meta-item">${areaLabels || '未設定'}</span>
-                        <span class="shop-meta-item">${PRICE_RANGES[shop.price] || shop.price}</span>
+            <article class="shop-card" data-id="${shop.id}">
+                <div class="shop-card-actions">
+                    <button class="shop-edit-btn" data-id="${shop.id}" title="編集">✎</button>
+                    <button class="shop-delete-btn" data-id="${shop.id}" title="削除">×</button>
+                </div>
+                <div class="shop-card-content" onclick="window.open('${this.escapeHtml(shop.url)}', '_blank')">
+                    <img 
+                        src="${this.escapeHtml(shop.image) || 'https://via.placeholder.com/400x200?text=No+Image'}" 
+                        alt="${this.escapeHtml(shop.name)}" 
+                        class="shop-image"
+                        onerror="this.src='https://via.placeholder.com/400x200?text=No+Image'"
+                    >
+                    <div class="shop-content">
+                        <span class="shop-category">${categoryLabels || 'その他'}</span>
+                        <h3 class="shop-name">${this.escapeHtml(shop.name)}</h3>
+                        ${shop.description ? `<p class="shop-description">${this.escapeHtml(shop.description)}</p>` : ''}
+                        <div class="shop-meta">
+                            <span class="shop-meta-item">${areaLabels || '未設定'}</span>
+                            <span class="shop-meta-item">${PRICE_RANGES[shop.price] || shop.price}</span>
+                        </div>
                     </div>
                 </div>
             </article>
@@ -272,6 +294,54 @@ class UI {
     closeSettingsModal() {
         this.elements.settingsOverlay.classList.remove('active');
         document.body.style.overflow = '';
+    }
+
+    // 編集モーダルを開く
+    openEditModal(shop) {
+        // フォームに値をセット
+        this.elements.editShopId.value = shop.id;
+        this.elements.editShopUrl.value = shop.url || '';
+        this.elements.editShopName.value = shop.name || '';
+        this.elements.editShopPrice.value = shop.price || '';
+        this.elements.editShopImage.value = shop.image || '';
+        this.elements.editShopDescription.value = shop.description || '';
+        
+        // カテゴリチェックボックスを生成・選択
+        const categories = config.getAllCategoriesWithoutAll();
+        const selectedCats = shop.category ? shop.category.split(',').map(c => c.trim()) : [];
+        
+        this.elements.editCategoryCheckboxes.innerHTML = Object.entries(categories).map(([id, name]) => `
+            <label class="checkbox-label">
+                <input type="checkbox" name="editCategory" value="${id}" ${selectedCats.includes(id) ? 'checked' : ''}>
+                <span>${this.escapeHtml(name)}</span>
+            </label>
+        `).join('');
+        
+        // エリアチェックボックスを生成・選択
+        const areas = config.getAllAreasWithoutAll();
+        const selectedAreas = shop.area ? shop.area.split(',').map(a => a.trim()) : [];
+        
+        this.elements.editAreaCheckboxes.innerHTML = Object.entries(areas).map(([id, name]) => `
+            <label class="checkbox-label">
+                <input type="checkbox" name="editArea" value="${id}" ${selectedAreas.includes(id) ? 'checked' : ''}>
+                <span>${this.escapeHtml(name)}</span>
+            </label>
+        `).join('');
+        
+        this.elements.editOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // 編集モーダルを閉じる
+    closeEditModal() {
+        this.elements.editOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // 編集ボタンのローディング状態
+    setEditButtonLoading(loading) {
+        this.elements.saveEdit.disabled = loading;
+        this.elements.saveEdit.textContent = loading ? '保存中...' : '保存';
     }
 
     showPreview(data) {
