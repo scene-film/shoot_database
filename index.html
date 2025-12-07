@@ -158,9 +158,13 @@
             <form class="modal-form" id="bentoForm">
                 <div class="form-group">
                     <label class="form-label">お店のURL <span class="required">*</span></label>
-                    <div class="url-input-wrapper">
-                        <input type="url" class="form-input" id="bentoUrl" placeholder="https://..." required>
-                        <button type="button" class="btn-fetch" id="bentoFetchOgp">取得</button>
+                    <input type="url" class="form-input" id="bentoUrl" placeholder="https://... （入力すると自動で情報取得）" required>
+                    <div class="fetch-status" id="bentoFetchStatus"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">画像プレビュー</label>
+                    <div class="image-preview" id="bentoImagePreview">
+                        <span class="preview-placeholder">画像URLを入力するとプレビュー表示</span>
                     </div>
                 </div>
                 <div class="form-row">
@@ -214,9 +218,13 @@
             <form class="modal-form" id="locationForm">
                 <div class="form-group">
                     <label class="form-label">URL</label>
-                    <div class="url-input-wrapper">
-                        <input type="url" class="form-input" id="locationUrl" placeholder="https://...">
-                        <button type="button" class="btn-fetch" id="locationFetchOgp">取得</button>
+                    <input type="url" class="form-input" id="locationUrl" placeholder="https://... （入力すると自動で情報取得）">
+                    <div class="fetch-status" id="locationFetchStatus"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">画像プレビュー</label>
+                    <div class="image-preview" id="locationImagePreview">
+                        <span class="preview-placeholder">画像URLを入力するとプレビュー表示</span>
                     </div>
                 </div>
                 <div class="form-row">
