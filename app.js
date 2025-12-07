@@ -93,18 +93,28 @@ function initEventListeners() {
     ui.elements.locationSearchInput.addEventListener('input', debounce(e => { locationFilters.search = e.target.value.toLowerCase(); applyLocationFilters(); }, 300));
     
     // 弁当モーダル
-    ui.elements.openBentoModal.addEventListener('click', () => ui.openModal(ui.elements.bentoModalOverlay));
+    ui.elements.openBentoModal.addEventListener('click', () => {
+        ui.openModal(ui.elements.bentoModalOverlay);
+        ui.updateImagePreview('bento', '');
+        ui.updateFetchStatus('bento', '', '');
+    });
     ui.elements.closeBentoModal.addEventListener('click', () => ui.closeModal(ui.elements.bentoModalOverlay));
     ui.elements.bentoModalOverlay.addEventListener('click', e => { if (e.target === ui.elements.bentoModalOverlay) ui.closeModal(ui.elements.bentoModalOverlay); });
     ui.elements.bentoForm.addEventListener('submit', handleBentoSubmit);
-    ui.elements.bentoFetchOgp.addEventListener('click', () => fetchOgp('bento'));
+    ui.elements.bentoUrl.addEventListener('input', debounce(e => autoFetchOgp('bento', e.target.value), 800));
+    ui.elements.bentoImage.addEventListener('input', e => ui.updateImagePreview('bento', e.target.value));
     
     // ロケ地モーダル
-    ui.elements.openLocationModal.addEventListener('click', () => ui.openModal(ui.elements.locationModalOverlay));
+    ui.elements.openLocationModal.addEventListener('click', () => {
+        ui.openModal(ui.elements.locationModalOverlay);
+        ui.updateImagePreview('location', '');
+        ui.updateFetchStatus('location', '', '');
+    });
     ui.elements.closeLocationModal.addEventListener('click', () => ui.closeModal(ui.elements.locationModalOverlay));
     ui.elements.locationModalOverlay.addEventListener('click', e => { if (e.target === ui.elements.locationModalOverlay) ui.closeModal(ui.elements.locationModalOverlay); });
     ui.elements.locationForm.addEventListener('submit', handleLocationSubmit);
-    ui.elements.locationFetchOgp.addEventListener('click', () => fetchOgp('location'));
+    ui.elements.locationUrl.addEventListener('input', debounce(e => autoFetchOgp('location', e.target.value), 800));
+    ui.elements.locationImage.addEventListener('input', e => ui.updateImagePreview('location', e.target.value));
     
     // 弁当編集
     ui.elements.closeBentoEdit.addEventListener('click', () => ui.closeModal(ui.elements.bentoEditOverlay));
@@ -191,30 +201,35 @@ function applyLocationFilters() {
     ui.renderLocations(filteredLocations);
 }
 
-async function fetchOgp(type) {
-    const urlEl = type === 'bento' ? ui.elements.bentoUrl : ui.elements.locationUrl;
+async function autoFetchOgp(type, url) {
+    url = url.trim();
+    if (!url || !url.startsWith('http')) {
+        ui.updateFetchStatus(type, '', '');
+        return;
+    }
+    
     const nameEl = type === 'bento' ? ui.elements.bentoName : ui.elements.locationName;
     const imageEl = type === 'bento' ? ui.elements.bentoImage : ui.elements.locationImage;
     const descEl = type === 'bento' ? ui.elements.bentoDescription : ui.elements.locationDescription;
-    const btn = type === 'bento' ? ui.elements.bentoFetchOgp : ui.elements.locationFetchOgp;
     
-    const url = urlEl.value.trim();
-    if (!url) { ui.showToast('URLを入力してください', 'error'); return; }
-    
-    btn.disabled = true;
-    btn.textContent = '取得中...';
+    ui.updateFetchStatus(type, 'loading', '情報を取得中...');
     
     try {
         const ogp = await api.fetchOgp(url);
-        if (ogp.title) nameEl.value = ogp.title;
-        if (ogp.image) imageEl.value = ogp.image;
-        if (ogp.description) descEl.value = ogp.description;
-        ui.showToast('情報を取得しました');
+        
+        if (ogp.title || ogp.image || ogp.description) {
+            if (ogp.title && !nameEl.value) nameEl.value = ogp.title;
+            if (ogp.image) {
+                imageEl.value = ogp.image;
+                ui.updateImagePreview(type, ogp.image);
+            }
+            if (ogp.description && !descEl.value) descEl.value = ogp.description;
+            ui.updateFetchStatus(type, 'success', '✓ 情報を取得しました');
+        } else {
+            ui.updateFetchStatus(type, 'error', '情報を取得できませんでした');
+        }
     } catch (e) {
-        ui.showToast('取得に失敗しました', 'error');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = '取得';
+        ui.updateFetchStatus(type, 'error', '取得に失敗しました');
     }
 }
 
