@@ -186,6 +186,8 @@ function applyBentoFilters() {
         if (bentoFilters.search && !`${shop.name} ${shop.description}`.toLowerCase().includes(bentoFilters.search)) return false;
         return true;
     });
+    // 50音順でソート
+    filteredBento.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ja'));
     ui.renderBentoShops(filteredBento);
 }
 
@@ -202,6 +204,8 @@ function applyLocationFilters() {
         if (locationFilters.search && !`${loc.name} ${loc.description} ${loc.address}`.toLowerCase().includes(locationFilters.search)) return false;
         return true;
     });
+    // 50音順でソート
+    filteredLocations.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ja'));
     ui.renderLocations(filteredLocations);
 }
 
