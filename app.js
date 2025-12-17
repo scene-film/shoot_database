@@ -218,7 +218,7 @@ async function autoFetchOgp(type, url) {
     
     const nameEl = type === 'bento' ? ui.elements.bentoName : ui.elements.locationName;
     const imageEl = type === 'bento' ? ui.elements.bentoImage : ui.elements.locationImage;
-    const descEl = type === 'bento' ? ui.elements.bentoDescription : ui.elements.locationDescription;
+    const descEl = type === 'bento' ? ui.elements.bentoDescription : null; // ロケ地は説明を自動取得しない
     
     ui.updateFetchStatus(type, 'loading', '情報を取得中...');
     
@@ -231,7 +231,7 @@ async function autoFetchOgp(type, url) {
                 imageEl.value = ogp.image;
                 ui.updateImagePreview(type, ogp.image);
             }
-            if (ogp.description && !descEl.value) descEl.value = ogp.description;
+            if (descEl && ogp.description && !descEl.value) descEl.value = ogp.description;
             ui.updateFetchStatus(type, 'success', '✓ 情報を取得しました');
         } else {
             ui.updateFetchStatus(type, 'error', '情報を取得できませんでした');
