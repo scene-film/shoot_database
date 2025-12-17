@@ -56,50 +56,34 @@
             <header class="header">
                 <div class="header-inner">
                     <h1 class="page-title">弁当</h1>
-                    <button class="btn-add" id="openBentoModal">お店を登録</button>
-                </div>
-                <div class="header-filters">
-                    <div class="header-filters-inner">
-                        <div class="filter-group filter-category">
-                            <label class="filter-label">カテゴリ</label>
-                            <div class="category-chips" id="bentoCategoryChips"></div>
-                        </div>
-                        <div class="filter-row">
-                            <div class="filter-group">
-                                <label class="filter-label">エリア</label>
-                                <select class="filter-select" id="bentoAreaFilter"></select>
-                            </div>
-                            <div class="filter-group">
-                                <label class="filter-label">価格帯</label>
-                                <select class="filter-select" id="bentoPriceFilter">
-                                    <option value="all">すべての価格</option>
-                                    <option value="under500">〜500円</option>
-                                    <option value="500to800">500〜800円</option>
-                                    <option value="800to1000">800〜1,000円</option>
-                                    <option value="over1000">1,000円〜</option>
-                                </select>
-                            </div>
-                            <div class="filter-group search-group">
-                                <label class="filter-label">検索</label>
-                                <input type="text" class="filter-input" id="bentoSearchInput" placeholder="店名で検索...">
-                            </div>
-                        </div>
+                    <div class="header-filters-inline">
+                        <select class="filter-select" id="bentoAreaFilter"></select>
+                        <select class="filter-select" id="bentoPriceFilter">
+                            <option value="all">すべての価格</option>
+                            <option value="under500">〜500円</option>
+                            <option value="500to800">500〜800円</option>
+                            <option value="800to1000">800〜1,000円</option>
+                            <option value="over1000">1,000円〜</option>
+                        </select>
+                        <input type="text" class="filter-input" id="bentoSearchInput" placeholder="検索...">
                     </div>
+                    <button class="btn-add" id="openBentoModal">+ 登録</button>
+                </div>
+                <div class="header-categories">
+                    <div class="category-chips" id="bentoCategoryChips"></div>
                 </div>
             </header>
             <section class="items-section">
-                <div class="container">
-                    <div class="items-header">
-                        <p class="items-count"><span id="bentoCount">0</span>件</p>
-                    </div>
-                    <div class="items-grid" id="bentoGrid"></div>
-                    <div class="no-results" id="bentoNoResults" style="display: none;">
-                        <p>該当するお店が見つかりませんでした</p>
-                    </div>
-                    <div class="loading" id="bentoLoading">
-                        <div class="loading-spinner"></div>
-                        <p>読み込み中...</p>
-                    </div>
+                <div class="items-header">
+                    <p class="items-count"><span id="bentoCount">0</span>件</p>
+                </div>
+                <div class="items-grid" id="bentoGrid"></div>
+                <div class="no-results" id="bentoNoResults" style="display: none;">
+                    <p>該当するお店が見つかりませんでした</p>
+                </div>
+                <div class="loading" id="bentoLoading">
+                    <div class="loading-spinner"></div>
+                    <p>読み込み中...</p>
                 </div>
             </section>
         </div>
@@ -109,40 +93,27 @@
             <header class="header">
                 <div class="header-inner">
                     <h1 class="page-title">ロケ地</h1>
-                    <button class="btn-add" id="openLocationModal">ロケ地を登録</button>
-                </div>
-                <div class="header-filters">
-                    <div class="header-filters-inner">
-                        <div class="filter-group filter-category">
-                            <label class="filter-label">カテゴリ</label>
-                            <div class="category-chips" id="locationCategoryChips"></div>
-                        </div>
-                        <div class="filter-row">
-                            <div class="filter-group">
-                                <label class="filter-label">エリア</label>
-                                <select class="filter-select" id="locationAreaFilter"></select>
-                            </div>
-                            <div class="filter-group search-group">
-                                <label class="filter-label">検索</label>
-                                <input type="text" class="filter-input" id="locationSearchInput" placeholder="ロケ地名で検索...">
-                            </div>
-                        </div>
+                    <div class="header-filters-inline">
+                        <select class="filter-select" id="locationAreaFilter"></select>
+                        <input type="text" class="filter-input" id="locationSearchInput" placeholder="検索...">
                     </div>
+                    <button class="btn-add" id="openLocationModal">+ 登録</button>
+                </div>
+                <div class="header-categories">
+                    <div class="category-chips" id="locationCategoryChips"></div>
                 </div>
             </header>
             <section class="items-section">
-                <div class="container">
-                    <div class="items-header">
-                        <p class="items-count"><span id="locationCount">0</span>件</p>
-                    </div>
-                    <div class="items-grid" id="locationGrid"></div>
-                    <div class="no-results" id="locationNoResults" style="display: none;">
-                        <p>該当するロケ地が見つかりませんでした</p>
-                    </div>
-                    <div class="loading" id="locationLoading">
-                        <div class="loading-spinner"></div>
-                        <p>読み込み中...</p>
-                    </div>
+                <div class="items-header">
+                    <p class="items-count"><span id="locationCount">0</span>件</p>
+                </div>
+                <div class="items-grid" id="locationGrid"></div>
+                <div class="no-results" id="locationNoResults" style="display: none;">
+                    <p>該当するロケ地が見つかりませんでした</p>
+                </div>
+                <div class="loading" id="locationLoading">
+                    <div class="loading-spinner"></div>
+                    <p>読み込み中...</p>
                 </div>
             </section>
         </div>
